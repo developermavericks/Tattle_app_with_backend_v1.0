@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-background: #0B0C10;
+  --color-surface-dim: #111415;
+  --color-surface: #1F2833;
+  --color-primary: #45A29E;
+  --color-primary-light: #7bd6d1;
+  --color-secondary: #ebb2ff;
+  --color-secondary-dark: #b600f8;
+  --color-text-muted: #bdc9c7;
+}
+
+@layer base {
+  body {
+    background-color: #0B0C10;
+    color: #e2e2e3;
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+}
+
+/* Glass panel style */
+.glass-panel {
+  background: rgba(31, 40, 51, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-card {
+  background: #1F2833;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Neon Glow classes */
+.neon-glow-primary {
+  box-shadow: 0 0 15px rgba(69, 162, 158, 0.25);
+}
+
+.neon-glow-secondary {
+  box-shadow: 0 0 15px rgba(235, 178, 255, 0.25);
+}
+
+.neon-border {
+  border: 1px solid rgba(69, 162, 158, 0.4);
+  box-shadow: 0 0 10px rgba(69, 162, 158, 0.15);
+}
+
+/* Hide scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Drag handles */
+.drag-handle {
+  width: 36px;
+  height: 4px;
+  background-color: rgba(135, 147, 146, 0.4);
+  border-radius: 2px;
+}
+
+/* Gradient mesh backgrounds */
+.gradient-mesh {
+  background-color: #0B0C10;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(69, 162, 158, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(182, 0, 248, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(69, 162, 158, 0.15) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(182, 0, 248, 0.1) 0px, transparent 50%);
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.4; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+

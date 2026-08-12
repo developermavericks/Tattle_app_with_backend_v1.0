@@ -1,0 +1,6 @@
+{
+  "name": "Tattle",
+  "description": "A swipeable, mobile-first news app for Gen Z with three-tier content depth, anonymous onboarding, and progressive disclosure.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
