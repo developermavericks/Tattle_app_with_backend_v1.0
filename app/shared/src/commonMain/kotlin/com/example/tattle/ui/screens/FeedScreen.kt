@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -135,19 +136,22 @@ fun FeedScreen(
             } else if (currentArticle == null) {
                 EmptyState(activeTab) { activeTab = "For You" }
             } else {
-                Box(
+                BoxWithConstraints(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 24.dp)
-                        .aspectRatio(0.55f) // Even longer vertical length
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
+                    val cardHeight = maxHeight
+                    val cardWidth = maxWidth
+
                     // Back cards for visual stack
                     if (currentIndex + 2 < filteredArticles.size) {
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
+                                .size(cardWidth, cardHeight)
                                 .padding(top = 24.dp)
-                                .offset(y = 24.dp)
+                                .offset(y = 20.dp)
+                                .scale(0.9f)
                                 .clip(RoundedCornerShape(32.dp))
                                 .background(Color(0xFFF5F5F5))
                                 .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(32.dp))
@@ -156,9 +160,10 @@ fun FeedScreen(
                     if (currentIndex + 1 < filteredArticles.size) {
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
+                                .size(cardWidth, cardHeight)
                                 .padding(top = 12.dp)
-                                .offset(y = 12.dp)
+                                .offset(y = 10.dp)
+                                .scale(0.95f)
                                 .clip(RoundedCornerShape(32.dp))
                                 .background(Color(0xFFEEEEEE))
                                 .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(32.dp))
@@ -217,7 +222,8 @@ fun FeedScreen(
                                 val newReactions = preferences.reactions + (currentArticle.id to emoji)
                                 onUpdatePreferences(preferences.copy(reactions = newReactions))
                             },
-                            currentReaction = preferences.reactions[currentArticle.id]
+                            currentReaction = preferences.reactions[currentArticle.id],
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }

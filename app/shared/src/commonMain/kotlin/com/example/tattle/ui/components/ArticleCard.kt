@@ -134,7 +134,7 @@ fun ArticleCard(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
+                        .fillMaxHeight(0.6f) // Fixed proportion for image
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color.LightGray)
                 ) {
@@ -162,19 +162,19 @@ fun ArticleCard(
                             Text(
                                 text = "Trending",
                                 color = Color.White,
-                                fontSize = 12.sp,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                         Box(
                             modifier = Modifier
-                                .background(Primary, RoundedCornerShape(8.dp))
+                                .background(Primary.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Text(
                                 text = article.category,
                                 color = Color.White,
-                                fontSize = 12.sp,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -185,29 +185,30 @@ fun ArticleCard(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .weight(1f) // Takes remaining 40%
                         .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 8.dp)
                 ) {
                     Text(
                         text = article.headline,
                         color = Color.Black,
-                        fontSize = 28.sp,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        lineHeight = 32.sp,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = article.hook,
-                        color = Color.Black,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        lineHeight = 20.sp,
+                        lineHeight = 28.sp,
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = article.hook,
+                        color = Color.DarkGray,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        lineHeight = 18.sp,
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.weight(1f))
                     
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -224,33 +225,33 @@ fun ArticleCard(
                             Text(
                                 text = article.publisher,
                                 color = Color.Black,
-                                fontSize = 14.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = article.publishedAt,
                                 color = Color.Gray,
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium
                             )
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = onToggleBookmark) {
+                            IconButton(onClick = onToggleBookmark, modifier = Modifier.size(40.dp)) {
                                 Icon(
                                     imageVector = if (isBookmarked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                                     contentDescription = null,
                                     tint = Primary,
-                                    modifier = Modifier.size(28.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
-                            IconButton(onClick = onShare) {
+                            IconButton(onClick = onShare, modifier = Modifier.size(40.dp)) {
                                 Icon(
                                     imageVector = Icons.Default.Share,
                                     contentDescription = null,
-                                    tint = Color.Black,
-                                    modifier = Modifier.size(24.dp)
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }

@@ -297,47 +297,38 @@ fun AgeStep(age: String, onAgeChange: (String) -> Unit) {
         )
 
         Box(modifier = Modifier.width(200.dp), contentAlignment = Alignment.Center) {
-            BasicTextField(
-                value = age,
-                onValueChange = onAgeChange,
-                textStyle = TextStyle(
-                    fontSize = 64.sp,
-                    fontWeight = FontWeight.ExtraBold,
+        TextField(
+            value = age,
+            onValueChange = onAgeChange,
+            textStyle = TextStyle(
+                fontSize = 64.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+                color = if (isError) Primary else Color.Black
+            ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = if (isError) Primary else Color.Black,
+                unfocusedIndicatorColor = Color(0xFFE8E8E8),
+                cursorColor = Primary
+            ),
+            placeholder = {
+                Text(
+                    "00",
+                    modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
-                    color = if (isError) Primary else Color.Black
-                ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                cursorBrush = SolidColor(Primary),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                decorationBox = { innerTextField ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(contentAlignment = Alignment.Center) {
-                            if (age.isEmpty()) {
-                                Text(
-                                    "00",
-                                    color = Color(0xFFE8E8E8),
-                                    fontSize = 64.sp,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
-                            }
-                            innerTextField()
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        // Underline
-                        Box(
-                            modifier = Modifier
-                                .width(80.dp)
-                                .height(4.dp)
-                                .background(
-                                    color = if (isError) Primary else if (age.isNotEmpty()) Color.Black else Color(0xFFE8E8E8),
-                                    shape = CircleShape
-                                )
-                        )
-                    }
-                }
-            )
-        }
+                    color = Color(0xFFE8E8E8),
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        )
+    }
         
         if (isError) {
             Text(
