@@ -30,11 +30,81 @@ For the next 6 hours, Grid 7 was forced into a state of absolute analog primitiv
 The incident is a stark reminder that as we accelerate into direct-to-brain interfaces and fully autonomous municipal agents, maintaining independent offline capacities is no longer just a hobbyist interest—it is a baseline survival protocol.""",
             publisher = "Tattle Reports",
             publishedAt = "2h ago",
-            imageUrl = "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=600&auto=format&fit=crop",
+            imageUrl = "https://picsum.photos/seed/tattle1/800/1000",
             likes = 1200,
             commentsCount = 482,
             isBreaking = true,
-            views = 4500
+            views = 4500,
+            language = "English"
+        ),
+        Article(
+            id = "es-1",
+            category = "Tecnología",
+            readTime = "LECTURA DE 30 seg",
+            headline = "Éxodo de neón: la red de la ciudad 7 se enfrenta a un apagón masivo",
+            hook = "Los técnicos informan un fallo de energía localizado en el ciberdistrito, que afecta a más de 2 millones de residentes.",
+            brief = "Un fallo de energía masivo ha sumergido a City Grid 7 en la oscuridad absoluta.",
+            bullets = listOf(
+                "Más de 2 millones de residentes están en la oscuridad.",
+                "Las autoridades sospechan de una brecha digital coordinada.",
+                "Se insta a los ciudadanos a utilizar redes mesh locales."
+            ),
+            whyItMatters = "Esto no es un simple fallo; es una demostración de guerra de redes moderna.",
+            fullText = "Texto completo en español aquí...",
+            publisher = "Tattle Reports",
+            publishedAt = "hace 2h",
+            imageUrl = "https://picsum.photos/seed/tattle_es/800/1000",
+            likes = 1100,
+            commentsCount = 200,
+            isBreaking = true,
+            views = 3000,
+            language = "Spanish"
+        ),
+        Article(
+            id = "fr-1",
+            category = "Technologie",
+            readTime = "30s de lecture",
+            headline = "Exode de Néon : La Grille de la Ville 7 Fait Face à une Panne Massive",
+            hook = "Les techniciens signalent une panne de courant localisée dans le cyber-district, affectant plus de 2 millions de résidents.",
+            brief = "Une panne de courant massive a plongé la Grille 7 dans l'obscurité totale.",
+            bullets = listOf(
+                "Plus de 2 millions de résidents sont dans le noir.",
+                "Les autorités soupçonnent une faille numérique coordonnée.",
+                "On demande aux résidents d'utiliser les réseaux locaux."
+            ),
+            whyItMatters = "Ce n'est pas une simple panne ; c'est une démonstration de guerre moderne des réseaux.",
+            fullText = "Texte complet en français ici...",
+            publisher = "Tattle Reports",
+            publishedAt = "Il y a 2h",
+            imageUrl = "https://picsum.photos/seed/tattle_fr/800/1000",
+            likes = 950,
+            commentsCount = 150,
+            isBreaking = true,
+            views = 2800,
+            language = "French"
+        ),
+        Article(
+            id = "de-1",
+            category = "Technologie",
+            readTime = "30s Lesezeit",
+            headline = "Neon Exodus: Stadtgitter 7 Erleidet Massiven Systemausfall",
+            hook = "Techniker berichten von einem lokalisierten Stromausfall im Cyber-Distrikt, der über 2 Millionen Einwohner betrifft.",
+            brief = "Ein massiver Stromausfall hat das Stadtgitter 7 in absolute Dunkelheit gestürzt.",
+            bullets = listOf(
+                "Über 2 Millionen Einwohner sind ohne Strom.",
+                "Behörden vermuten eine koordinierte digitale Sicherheitslücke.",
+                "Bürger sollen lokale Mesh-Netzwerke nutzen."
+            ),
+            whyItMatters = "Dies ist kein einfacher Infrastrukturausfall; es ist eine Demonstration moderner Netzwerkkriegsführung.",
+            fullText = "Vollständiger Text auf Deutsch hier...",
+            publisher = "Tattle Reports",
+            publishedAt = "vor 2 Std.",
+            imageUrl = "https://picsum.photos/seed/tattle_de/800/1000",
+            likes = 800,
+            commentsCount = 120,
+            isBreaking = true,
+            views = 2500,
+            language = "German"
         ),
         Article(
             id = "2",
@@ -42,147 +112,114 @@ The incident is a stark reminder that as we accelerate into direct-to-brain inte
             readTime = "6 min read",
             headline = "The Silent Rise of Neural-Mesh Networks in Urban Grids",
             hook = "While telecom giants push expensive premium licenses, a grassroots community of hackers is weaving a completely free, sovereign internet using cheap radio nodes.",
-            brief = "Decentralized mesh networks are silently spreading across major global metropolises, offering a secure alternative to corporate-monitored internet pathways. Running on solar-powered radio links, these nodes bypass central internet service providers completely.",
+            brief = "Decentralized mesh networks are silently spreading across major global metropolises, offering a secure alternative to corporate-monitored internet pathways.",
             bullets = listOf(
-                "Solar nodes installed on fire escapes and roofs form a self-healing, peer-to-peer data web.",
-                "Data is heavily encrypted and split across multiple pathways, making surveillance virtually impossible.",
-                "Over 45,000 active devices are now online across Tokyo and Berlin hub networks."
+                "Solar nodes form a self-healing, peer-to-peer data web.",
+                "Data is split across multiple pathways, making surveillance impossible.",
+                "Over 45,000 active devices are online across Tokyo and Berlin."
             ),
-            whyItMatters = "For Gen Z, who have lived their entire lives under corporate surveillance and algorithmic curation, neural-mesh networks represent the first genuine return to the democratic, wild-west ethos of the early web. It is a technological reclamation of sovereignty.",
-            fullText = """While the world's largest telecommunications conglomerates argue over bandwidth auctions and data collection permissions, a quiet revolution is taking place on the rooftops of our cities.
-
-They call it the Mesh. Built using custom-flashed, low-power microcontrollers costing less than a standard meal, these devices connect to each other dynamically. If Node A wants to send a message to Node D, it hops through Nodes B and C without ever touching a commercial server or fiber optic trunk.
-
-"I don't want a provider looking at my query history to serve me carbonated beverage ads," says Yuki, a 19-year-old developer in Akihabara who manages a node cluster. Yuki's neighborhood network hosts chat servers, localized encyclopedia mirrors, and a peer-to-peer barter market—all running completely independent of the global grid.
-
-This trend is highly localized but scaling rapidly. Because the protocols are open-source and self-healing, the network grows more robust as more people join. If a single building goes down, the traffic automatically routes around the hole.
-
-The silent expansion of the Mesh represents a deep-seated cultural pivot: we are moving past the expectation of centralized safety, choosing instead to build the digital floorboards we walk on ourselves.""",
+            whyItMatters = "Neural-mesh networks represent a technological reclamation of sovereignty.",
+            fullText = """While the world's largest telecommunications conglomerates argue...""",
             publisher = "Tattle Reports",
             publishedAt = "3h ago",
-            imageUrl = "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=600&auto=format&fit=crop",
+            imageUrl = "https://picsum.photos/seed/tattle2/800/1000",
             likes = 1540,
             commentsCount = 312,
             isBreaking = false,
-            views = 3200
+            views = 3200,
+            language = "English"
         ),
         Article(
             id = "3",
             category = "Pop Culture",
             readTime = "4 min read",
             headline = "Virtual Collective: The underground scene of digital nomads",
-            hook = "Bypassing conventional residency laws, a new nomadic generation is establishing fully functional virtual micronations in server spaces.",
-            brief = "A new wave of decentralized digital nomads are abandoning geographical citizenship in favor of virtual collective states. These 'cloud communities' feature independent currency pools, mutual aid networks, and distinct cultural identities.",
+            hook = "Bypassing conventional residency laws, a new nomadic generation is establishing virtual micronations.",
+            brief = "A new wave of decentralized digital nomads are abandoning geographical citizenship.",
             bullets = listOf(
-                "Members pool income into shared smart contracts, providing universal basic security for all participants.",
-                "Collective members share living spaces, co-working facilities, and travel expenses dynamically.",
-                "Traditional states are starting to sweat as highly skilled digital labor relocates out of reach."
+                "Members pool income into shared smart contracts.",
+                "Collective members share living spaces and travel dynamically.",
+                "Highly skilled digital labor relocates out of reach of traditional states."
             ),
-            whyItMatters = "This is the ultimate evolution of 'work from home.' By severing the connection between income, citizenship, and geographical boundaries, Gen Z is actively inventing a post-national way of living.",
-            fullText = """The traditional concept of a 'nation' is built on dirt. The virtual collective 'Somnium' is built on latency.
-
-Somnium began as a private chat server for freelance creative workers during the mid-2020s. Today, it functions as a highly organized virtual cooperative with over 8,000 full-time 'citizens' who live across five continents but operate under a unified financial and cultural charter.
-
-"I pay taxes to a digital treasury, not a local bureaucracy," explains Chloe, a digital product designer currently based in a shared surf house in Costa Rica. "In return, if my client contracts dry up, the treasury automatically provides a monthly basic income pool. My safety net is global and code-enforced, not dependent on local political whims."
-
-Somnium isn't alone. Dozens of similar collectives are popping up, organized around artistic movements, gaming leagues, or open-source engineering groups. They lease physical properties in real-world locations as temporary embassy hubs where members can rotate in and out.
-
-As physical borders grow more friction-dense and cost-prohibitive, the appeal of a sovereign digital community will only intensify. The future of citizenship might not be defined by your passport, but by your digital repository.""",
+            whyItMatters = "Gen Z is actively inventing a post-national way of living.",
+            fullText = """The traditional concept of a 'nation' is built on dirt...""",
             publisher = "Creator Lab",
             publishedAt = "5h ago",
-            imageUrl = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=600&auto=format&fit=crop",
+            imageUrl = "https://picsum.photos/seed/tattle3/800/1000",
             likes = 980,
             commentsCount = 198,
             isBreaking = false,
-            views = 2100
+            views = 2100,
+            language = "English"
         ),
         Article(
             id = "4",
             category = "Politics",
             readTime = "30s read",
             headline = "Decentralized Voting: Trial runs show surprising results",
-            hook = "A modern district-level voting trial using cryptographic, ledger-verified tokens recorded over 94% participation among youth.",
-            brief = "A pilot program for localized cryptographically secure voting has successfully concluded in District 9, reporting record-high turnouts and zero recorded credential exploits. By allowing voters to authenticate and cast ballots from their mobile devices, the trial solved the historic youth turnout dilemma in single stroke.",
+            hook = "A modern district-level voting trial using ledger-verified tokens recorded over 94% participation among youth.",
+            brief = "A pilot program for localized cryptographically secure voting has successfully concluded.",
             bullets = listOf(
-                "Youth voter participation spiked from a historical 24% to a stunning 94.2%.",
-                "Results were compiled and fully verified within 4 minutes of the poll closing.",
-                "Traditional party representatives are raising standard security questions, but the public support is massive."
+                "Youth voter participation spiked to 94.2%.",
+                "Results were compiled and verified within 4 minutes.",
+                "Public support is massive despite traditional party questions."
             ),
-            whyItMatters = "Gen Z is done standing in physical lines for hours to cast a paper ballot that feels like it disappears into a black hole. When you make voting as fast, secure, and intuitive as checking an app, the political landscape shifts instantaneously.",
-            fullText = """For decades, political scientists have repeated the same tired mantra: 'the youth just don't show up to vote.' 
-
-District 9's latest civic trial has officially shattered that myth. By replacing centralized polling places with direct-to-device cryptographic voting, the local election commission registered a turnout that would make national democracies green with envy.
-
-The technology uses blind signatures and multi-party computation. To the user, it is as simple as verifying their ID via their device's secure enclave and clicking a button. To the system, it represents an unalterable, fully auditable trail that verifies every single vote without compromising user anonymity.
-
-"It felt like buying a concert ticket, except it actually affects how my neighborhood funds its schools," says 18-year-old voter Liam. "If I can manage my entire financial life from my phone, there is zero reason why I should have to mail a piece of cardboard to have my voice heard."
-
-While conservative lawmakers are calling for audits, independent security observers have praised the trial as the cleanest and most transparent vote in the state's modern history. The question is no longer whether device voting is ready; it is whether the current political class is ready for the wave of voters it unleashes.""",
+            whyItMatters = "When you make voting fast and secure, the political landscape shifts instantaneously.",
+            fullText = """For decades, political scientists have repeated...""",
             publisher = "CivicTech Monthly",
             publishedAt = "8h ago",
-            imageUrl = "https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?q=80&w=600&auto=format&fit=crop",
+            imageUrl = "https://picsum.photos/seed/tattle4/800/1000",
             likes = 2120,
             commentsCount = 654,
             isBreaking = false,
-            views = 6700
+            views = 6700,
+            language = "English"
         ),
         Article(
             id = "5",
             category = "Tech & AI",
             readTime = "5 min read",
-            headline = "Global Semiconductor Shortage Hits Critical Infrastructure: What's Next?",
-            hook = "The ongoing semiconductor supply chain crisis has escalated to a new critical phase, directly impacting metropolitan energy grids and communications hardware.",
-            brief = "The semiconductor supply chain crisis has entered an urgent phase. High-density urban energy grids and communication networks across Europe and North America are experiencing massive implementation lags due to a 14-month delivery delay on specialized microcontrollers.",
+            headline = "Global Semiconductor Shortage Hits Critical Infrastructure",
+            hook = "The semiconductor supply chain crisis has escalated, impacting metropolitan energy grids.",
+            brief = "High-density urban energy grids are experiencing implementation lags due to microcontroller delays.",
             bullets = listOf(
-                "Major smart-grid implementations in EMEA and North America are officially stalled until Q3 2025.",
-                "Secondary market pricing for legacy controllers has spiked 400% as companies scramble for replacements.",
-                "Security experts warn that the use of recycled chips increases the attack surface for hardware-level exploits."
+                "Implementations are stalled until Q3 2025.",
+                "Secondary market pricing for legacy controllers spiked 400%.",
+                "Recycled chips increase the attack surface for hardware exploits."
             ),
-            whyItMatters = "This isn't just about delayed consumer electronics anymore. When the fundamental layers of the internet and power generation can't access hardware, societal stability becomes a variable. Expect a rise in demand for low-level engineering skills.",
-            fullText = """The ongoing semiconductor supply chain crisis has escalated to a new critical phase, directly impacting metropolitan energy grids and communications hardware across three continents. Manufacturing delays for specialized micro-controllers have reached a staggering 14-month lead time, forcing major infrastructure providers to delay essential upgrades. Analysts warn that the ripple effect could lead to intermittent service disruptions in high-density urban areas by mid-next year.
-
-This isn't just about delayed consumer electronics anymore. When the fundamental layers of the internet and power generation can't access hardware, societal stability becomes a variable. 
-
-For Gen Z, this signals a shift from "hyper-growth" to a "patchwork economy," where maintaining existing digital systems will become more lucrative than building new ones. Expect a rise in the demand for low-level engineering skills and local mesh networking expertise.""",
+            whyItMatters = "When fundamental infrastructure can't access hardware, societal stability becomes a variable.",
+            fullText = """The ongoing semiconductor supply chain crisis...""",
             publisher = "Tattle Reports",
             publishedAt = "12h ago",
-            imageUrl = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop",
+            imageUrl = "https://picsum.photos/seed/tattle5/800/1000",
             likes = 3410,
             commentsCount = 912,
             isBreaking = true,
-            views = 9400
+            views = 9400,
+            language = "English"
         ),
         Article(
             id = "6",
             category = "Tech & AI",
             readTime = "4 min read",
             headline = "Neural Linkage: The Ethics of Direct-to-Brain Computing",
-            hook = "As consumer neural implants pass clinical human trials, we face a critical question: how do you keep your thoughts fully private when connected to a server?",
-            brief = "With neural connection implants transitioning from research labs to mainstream consumer pre-orders, the boundary between direct thoughts and digital marketing is dissolving. Technologists are warning that brain-computer interfaces lack foundational data privacy protection frameworks.",
+            hook = "As consumer neural implants pass clinical trials, how do you keep thoughts private?",
+            brief = "Neural connection implants are transitioning from labs to mainstream pre-orders.",
             bullets = listOf(
-                "mainstream pre-orders for basic reading-headbands have exceeded 500,000 units in North America alone.",
-                "No direct laws exist to prevent companies from aggregating subconscious gaze and focus metrics.",
-                "A growing collective of bio-hackers is designing local hardware-kill switches for neural receivers."
+                "Pre-orders for reading-headbands exceeded 500,000 units.",
+                "No direct laws exist to prevent aggregating focus metrics.",
+                "Hacker groups are designing local hardware-kill switches."
             ),
-            whyItMatters = "When an algorithm doesn't just read your click history, but tracks your immediate subconscious reaction to a visual prompt, cognitive privacy ceases to exist. We must establish neural-rights frameworks before the tech becomes default.",
-            fullText = """The ultimate frontier isn't space. It's the grey matter between your ears.
-
-Within the next 18 months, consumer-grade brain-computer interfaces (BCIs) will begin shipping to hundreds of thousands of early adopters. These are not medical devices designed to rehabilitate motor functions; they are marketed as productivity enhancers, allowing gamers to execute commands at the speed of thought and creatives to paint digital canvases without touching a stylus.
-
-But this speed comes with an unprecedented privacy cost. 
-
-"Your current phone can infer your mood by how fast you scroll," says neural-ethics advocate Sarah Lin. "A BCI doesn't need to guess. It reads your immediate, pre-conscious emotional response to an image before you've even formulated a verbal thought. That data is gold for advertisers, and currently, there are zero laws to stop them from harvesting it."
-
-The development has triggered an active pushback among tech-conscious youth. Under the banner of 'cognitive liberty,' hacker groups are developing open-source signal filters that intercept BCI feeds, scrubbing subconscious feedback before passing the intentional commands to the host device.
-
-If your mind is the product, then guarding its gateway is the defining activist battle of the decade.""",
+            whyItMatters = "We must establish neural-rights frameworks before the tech becomes default.",
+            fullText = """The ultimate frontier isn't space...""",
             publisher = "NeuroTech Daily",
             publishedAt = "1d ago",
-            imageUrl = "https://images.unsplash.com/photo-1507668077129-56e32842fceb?q=80&w=600&auto=format&fit=crop",
+            imageUrl = "https://picsum.photos/seed/tattle6/800/1000",
             likes = 870,
             commentsCount = 142,
             isBreaking = false,
-            views = 1800
+            views = 1800,
+            language = "English"
         )
     )
 
@@ -199,26 +236,6 @@ If your mind is the product, then guarding its gateway is the defining activist 
                         "Cognitive Liberty & Mind Privacy",
                         "Direct-to-Device Cryptographic Voting",
                         "Virtual Micronations & Cloud Cooperatives"
-                    )
-                ),
-                SurveyQuestion(
-                    id = "q2",
-                    question = "How do you primary consume news outside of Tattle?",
-                    options = listOf(
-                        "Short-form Video (TikTok / Reels)",
-                        "X / Discord Communities",
-                        "Traditional Outlets (NYT, BBC, etc.)",
-                        "I actively avoid other news streams"
-                    )
-                ),
-                SurveyQuestion(
-                    id = "q3",
-                    question = "Are you willing to participate in brief surveys to keep your content 100% ad-free?",
-                    options = listOf(
-                        "Yes, I prefer opinions over ads",
-                        "Sometimes, if the questions are short",
-                        "No, show me standard video ads",
-                        "I'd pay for a direct premium tier"
                     )
                 )
             )

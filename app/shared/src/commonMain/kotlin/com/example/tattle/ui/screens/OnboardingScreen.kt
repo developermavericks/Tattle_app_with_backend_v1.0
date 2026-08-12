@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -23,7 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -40,7 +43,8 @@ data class Interest(val id: String, val label: String, val icon: String)
 
 @Composable
 fun OnboardingScreen(
-    onComplete: (UserPreferences) -> Unit
+    onComplete: (UserPreferences) -> Unit,
+    onBack: () -> Unit
 ) {
     var step by remember { mutableStateOf(1) }
     var language by remember { mutableStateOf("English") }
@@ -49,28 +53,31 @@ fun OnboardingScreen(
     var notificationsEnabled by remember { mutableStateOf<Boolean?>(null) }
 
     val interestsList = listOf(
-        Interest("Entertainment", "Entertainment", ""),
-        Interest("Bollywood", "Bollywood", ""),
-        Interest("Gaming", "Gaming", ""),
-        Interest("Tech", "Tech", ""),
-        Interest("Climate", "Climate", ""),
-        Interest("Pop Culture", "Pop Culture", ""),
-        Interest("Money", "Money", ""),
-        Interest("Science & Space", "Science & Space", ""),
-        Interest("Fashion", "Fashion", ""),
-        Interest("AI & Robotics", "AI & Robotics", ""),
-        Interest("Wellness", "Wellness", ""),
-        Interest("Sports", "Sports", "")
+        Interest("Entertainment", "Entertainment", "🎬"),
+        Interest("Bollywood", "Bollywood", "🎞️"),
+        Interest("Gaming", "Gaming", "🎮"),
+        Interest("Tech", "Tech", "💻"),
+        Interest("Climate", "Climate", "🌍"),
+        Interest("Pop Culture", "Pop Culture", "🎶"),
+        Interest("Money", "Money", "💰"),
+        Interest("Science & Space", "Science & Space", "🚀"),
+        Interest("Fashion", "Fashion", "👗"),
+        Interest("AI & Robotics", "AI & Robotics", "🤖"),
+        Interest("Wellness", "Wellness", "🧘"),
+        Interest("Sports", "Sports", "⚽")
     )
 
     Scaffold(
         topBar = {
-            OnboardingHeader(step = step, onBack = { if (step > 1) step-- })
+            OnboardingHeader(step = step, onBack = { 
+                if (step > 1) step-- else onBack() 
+            })
         },
         containerColor = Color.White,
         bottomBar = {
             OnboardingFooter(
                 step = step,
+                language = language,
                 canGoNext = when (step) {
                     1 -> true
                     2 -> age.isNotEmpty() && (age.toIntOrNull() ?: 0) in 13..100
@@ -125,8 +132,7 @@ fun OnboardingScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp)
-                        .verticalScroll(rememberScrollState()),
+                        .padding(24.dp),
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -192,6 +198,7 @@ fun OnboardingHeader(step: Int, onBack: () -> Unit) {
 @Composable
 fun OnboardingFooter(
     step: Int,
+    language: String,
     canGoNext: Boolean,
     onNext: () -> Unit
 ) {
@@ -215,7 +222,7 @@ fun OnboardingFooter(
             shape = RoundedCornerShape(28.dp)
         ) {
             Text(
-                text = if (step == 4) stringResource(Res.string.finish) else stringResource(Res.string.next),
+                text = if (step == 4) LocalStrings.get("finish", language) else LocalStrings.get("next", language),
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
@@ -225,40 +232,42 @@ fun OnboardingFooter(
 
 @Composable
 fun LanguageStep(selectedLanguage: String, onLanguageSelected: (String) -> Unit) {
-    Text(
-        text = stringResource(Res.string.select_your_language),
-        color = Color.Black,
-        fontSize = 32.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-    )
-    Text(
-        text = stringResource(Res.string.choose_primary_language),
-        color = Color.Black,
-        fontSize = 16.sp,
-        fontWeight = FontWeight.Medium,
-        modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
-    )
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        Text(
+            text = stringResource(Res.string.select_your_language),
+            color = Color.Black,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+        )
+        Text(
+            text = stringResource(Res.string.choose_primary_language),
+            color = Color.Black,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
+        )
 
-    listOf("English", "Spanish", "French", "German").forEach { lang ->
-        val isSelected = lang == selectedLanguage
-        Card(
-            onClick = { onLanguageSelected(lang) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isSelected) Primary else Color(0xFFE8E8E8)
-            )
-        ) {
-            Box(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    text = lang,
-                    color = if (isSelected) Color.White else Color.Black,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+        listOf("English", "Spanish", "French", "German").forEach { lang ->
+            val isSelected = lang == selectedLanguage
+            Card(
+                onClick = { onLanguageSelected(lang) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isSelected) Primary else Color(0xFFE8E8E8)
                 )
+            ) {
+                Box(modifier = Modifier.padding(24.dp)) {
+                    Text(
+                        text = lang,
+                        color = if (isSelected) Color.White else Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
             }
         }
     }
@@ -268,43 +277,82 @@ fun LanguageStep(selectedLanguage: String, onLanguageSelected: (String) -> Unit)
 fun AgeStep(age: String, onAgeChange: (String) -> Unit) {
     val isError = age.isNotEmpty() && (age.toIntOrNull() ?: 0) !in 13..100
 
-    Text(
-        text = stringResource(Res.string.your_age),
-        color = Color.Black,
-        fontSize = 32.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-    )
-    Text(
-        text = stringResource(Res.string.age_desc),
-        color = Color.Black,
-        fontSize = 16.sp,
-        fontWeight = FontWeight.Medium,
-        modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
-    )
-
-    OutlinedTextField(
-        value = age,
-        onValueChange = onAgeChange,
-        placeholder = { Text("0 0", color = Color.LightGray, fontSize = 48.sp, fontWeight = FontWeight.Bold) },
-        modifier = Modifier.width(150.dp),
-        textStyle = LocalTextStyle.current.copy(fontSize = 48.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        isError = isError,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color.Transparent,
-            unfocusedBorderColor = Color.Transparent,
-            errorBorderColor = Color.Transparent
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(Res.string.your_age),
+            color = Color.Black,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         )
-    )
-    
-    if (isError) {
-        Text(stringResource(Res.string.invalid_age), color = Primary, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+        Text(
+            text = stringResource(Res.string.age_desc),
+            color = Color.Black,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 48.dp)
+        )
+
+        Box(modifier = Modifier.width(200.dp), contentAlignment = Alignment.Center) {
+            BasicTextField(
+                value = age,
+                onValueChange = onAgeChange,
+                textStyle = TextStyle(
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
+                    color = if (isError) Primary else Color.Black
+                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                cursorBrush = SolidColor(Primary),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { innerTextField ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(contentAlignment = Alignment.Center) {
+                            if (age.isEmpty()) {
+                                Text(
+                                    "00",
+                                    color = Color(0xFFE8E8E8),
+                                    fontSize = 64.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                            innerTextField()
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        // Underline
+                        Box(
+                            modifier = Modifier
+                                .width(80.dp)
+                                .height(4.dp)
+                                .background(
+                                    color = if (isError) Primary else if (age.isNotEmpty()) Color.Black else Color(0xFFE8E8E8),
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+                }
+            )
+        }
+        
+        if (isError) {
+            Text(
+                stringResource(Res.string.invalid_age),
+                color = Primary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+        }
     }
 }
 
 @Composable
-fun InterestStep(interests: List<Interest>, selectedInterests: SnapshotStateList<String>, onToggle: (String) -> Unit) {
+fun ColumnScope.InterestStep(interests: List<Interest>, selectedInterests: SnapshotStateList<String>, onToggle: (String) -> Unit) {
     Text(
         text = stringResource(Res.string.what_are_you_into),
         color = Color.Black,
@@ -322,28 +370,38 @@ fun InterestStep(interests: List<Interest>, selectedInterests: SnapshotStateList
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.height(450.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth().weight(1f)
     ) {
         items(interests) { interest ->
             val isSelected = selectedInterests.contains(interest.id)
             Card(
                 onClick = { onToggle(interest.id) },
-                modifier = Modifier.aspectRatio(1f),
-                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.aspectRatio(0.85f),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected) Primary else Color(0xFFE8E8E8)
-                )
+                    containerColor = if (isSelected) Primary else Color(0xFFF5F5F5)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 0.dp)
             ) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = interest.icon,
+                        fontSize = 32.sp,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
                     Text(
                         text = interest.label,
                         color = if (isSelected) Color.White else Color.Black,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(4.dp)
+                        lineHeight = 14.sp
                     )
                 }
             }
@@ -353,27 +411,32 @@ fun InterestStep(interests: List<Interest>, selectedInterests: SnapshotStateList
 
 @Composable
 fun NotificationStep(isEnabled: Boolean, onToggle: () -> Unit) {
-    Text(
-        text = stringResource(Res.string.stay_in_loop),
-        color = Color.Black,
-        fontSize = 32.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-    )
-    Text(
-        text = stringResource(Res.string.notification_desc),
-        color = Color.Black,
-        fontSize = 16.sp,
-        fontWeight = FontWeight.Medium,
-        modifier = Modifier.fillMaxWidth().padding(bottom = 48.dp)
-    )
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(Res.string.stay_in_loop),
+            color = Color.Black,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+        )
+        Text(
+            text = stringResource(Res.string.notification_desc),
+            color = Color.Black,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 48.dp)
+        )
 
-    Image(
-        painter = painterResource(if (isEnabled) Res.drawable.notification else Res.drawable.notification_off),
-        contentDescription = "Notification Bell",
-        modifier = Modifier
-            .size(240.dp)
-            .clickable { onToggle() },
-        contentScale = ContentScale.Fit
-    )
+        Image(
+            painter = painterResource(if (isEnabled) Res.drawable.notification else Res.drawable.notification_off),
+            contentDescription = "Notification Bell",
+            modifier = Modifier
+                .size(240.dp)
+                .clickable { onToggle() },
+            contentScale = ContentScale.Fit
+        )
+    }
 }

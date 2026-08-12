@@ -58,11 +58,11 @@ fun ArticleCard(
     val swipeProgress = (offsetX.value / 400f).coerceIn(-1f, 1f)
     val cardColor by animateColorAsState(
         targetValue = when {
-            swipeProgress > 0.2f -> Color(0xFFE8F5E9) // Green tint for "Interested"
-            swipeProgress < -0.2f -> Color(0xFFFFEBEE) // Red tint for "Dismiss"
-            else -> Color(0xFFE8E8E8)
+            swipeProgress > 0.05f -> Color(0xFF1B5E20).copy(alpha = (abs(swipeProgress) * 1.2f).coerceIn(0.1f, 0.95f)) // Darker Green
+            swipeProgress < -0.05f -> Color(0xFFB71C1C).copy(alpha = (abs(swipeProgress) * 1.2f).coerceIn(0.1f, 0.95f)) // Darker Red
+            else -> Color(0xFFF5F5F5)
         },
-        animationSpec = tween(300)
+        animationSpec = tween(150)
     )
 
     Card(
@@ -125,38 +125,6 @@ fun ArticleCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Swipe Overlays
-            val overlayAlphaRight = (offsetX.value / 300f).coerceIn(0f, 1f)
-            val overlayAlphaLeft = (-offsetX.value / 300f).coerceIn(0f, 1f)
-
-            if (overlayAlphaRight > 0.1f) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(24.dp)
-                        .graphicsLayer(alpha = overlayAlphaRight, rotationZ = -15f)
-                        .border(4.dp, Color(0xFF4CAF50), RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text(text = "INTERESTED", color = Color(0xFF4CAF50), fontWeight = FontWeight.Black, fontSize = 24.sp)
-                }
-            }
-
-            if (overlayAlphaLeft > 0.1f) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(24.dp)
-                        .graphicsLayer(alpha = overlayAlphaLeft, rotationZ = 15f)
-                        .border(4.dp, Primary, RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text(text = "DISMISS", color = Primary, fontWeight = FontWeight.Black, fontSize = 24.sp)
-                }
-            }
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -287,6 +255,34 @@ fun ArticleCard(
                             }
                         }
                     }
+                }
+            }
+
+            // Swipe Overlays (Moved to end to be on top)
+            val overlayAlphaRight = (offsetX.value / 300f).coerceIn(0f, 1f)
+            val overlayAlphaLeft = (-offsetX.value / 300f).coerceIn(0f, 1f)
+
+            if (overlayAlphaRight > 0.1f) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .graphicsLayer(alpha = overlayAlphaRight, scaleX = overlayAlphaRight * 1.5f, scaleY = overlayAlphaRight * 1.5f)
+                        .background(Color(0xFF1B5E20).copy(alpha = 0.9f), CircleShape)
+                        .padding(24.dp)
+                ) {
+                    Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(64.dp))
+                }
+            }
+
+            if (overlayAlphaLeft > 0.1f) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .graphicsLayer(alpha = overlayAlphaLeft, scaleX = overlayAlphaLeft * 1.5f, scaleY = overlayAlphaLeft * 1.5f)
+                        .background(Color(0xFFB71C1C).copy(alpha = 0.9f), CircleShape)
+                        .padding(24.dp)
+                ) {
+                    Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(64.dp))
                 }
             }
 

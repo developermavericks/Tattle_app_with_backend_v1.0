@@ -20,6 +20,7 @@ data class Article(
     val commentsCount: Int,
     val isBreaking: Boolean,
     val views: Int,
+    val language: String = "English"
 )
 
 @Serializable

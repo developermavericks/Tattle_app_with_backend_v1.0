@@ -48,11 +48,12 @@ fun FeedScreen(
 
     val tabsList = listOf("For You", "Tech", "Culture", "Politics", "Saved")
 
-    val filteredArticles = remember(activeTab, preferences.bookmarks) {
+    val filteredArticles = remember(activeTab, preferences.bookmarks, preferences.language) {
+        val baseList = MockData.articles.filter { it.language == preferences.language }
         when (activeTab) {
-            "Saved" -> MockData.articles.filter { preferences.bookmarks.contains(it.id) }
-            "For You" -> MockData.articles // Simplified for now
-            else -> MockData.articles.filter { it.category.contains(activeTab, ignoreCase = true) }
+            "Saved" -> baseList.filter { preferences.bookmarks.contains(it.id) }
+            "For You" -> baseList
+            else -> baseList.filter { it.category.contains(activeTab, ignoreCase = true) }
         }
     }
 
@@ -137,8 +138,8 @@ fun FeedScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp)
-                        .aspectRatio(4f / 5f)
+                        .padding(horizontal = 24.dp, vertical = 24.dp)
+                        .aspectRatio(0.55f) // Even longer vertical length
                 ) {
                     // Back cards for visual stack
                     if (currentIndex + 2 < filteredArticles.size) {
@@ -218,52 +219,6 @@ fun FeedScreen(
                             },
                             currentReaction = preferences.reactions[currentArticle.id]
                         )
-                    }
-                }
-
-                // Primary manual hand swipe fallbacks
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 24.dp, start = 24.dp, end = 24.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            proceedNext(
-                                currentIndex,
-                                filteredArticles.size,
-                                { currentIndex = it },
-                                { cardsSinceSurvey = it },
-                                cardsSinceSurvey,
-                                { showSurvey = it },
-                                preferences
-                            )
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8E8E8), contentColor = Color.Black),
-                        shape = RoundedCornerShape(28.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.ThumbDown, null, modifier = Modifier.size(18.dp))
-                            Text("DISMISS", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        }
-                    }
-                    Button(
-                        onClick = { onLaunchBrief(currentArticle) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = Color.White),
-                        shape = RoundedCornerShape(28.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.AutoAwesome, null, modifier = Modifier.size(18.dp))
-                            Text("EXPLORE", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        }
                     }
                 }
             }

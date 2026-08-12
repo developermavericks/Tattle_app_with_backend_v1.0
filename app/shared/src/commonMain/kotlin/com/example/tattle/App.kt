@@ -42,20 +42,31 @@ fun App() {
         val viewModel: AppViewModel = koinViewModel()
         val preferences by viewModel.preferences.collectAsState()
         val navController = rememberNavController()
+        val appLanguage = preferences?.language ?: "English"
 
         TattleTheme {
+            val currentBackStack by navController.currentBackStackEntryAsState()
+            val currentRoute = currentBackStack?.destination?.route
+
             // Overlays
             var activeArticle by remember { mutableStateOf<Article?>(null) }
             var activeBriefArticle by remember { mutableStateOf<Article?>(null) }
 
-            val currentBackStack by navController.currentBackStackEntryAsState()
-            val currentRoute = currentBackStack?.destination?.route
+            // Auto-redirect from Splash if already onboarded
+            LaunchedEffect(preferences?.isOnboarded) {
+                if (preferences?.isOnboarded == true && currentRoute == Screen.Splash.route) {
+                    navController.navigate(Screen.Feed.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
+            }
 
             Scaffold(
                 bottomBar = {
                     if (currentRoute in listOf(Screen.Feed.route, Screen.Recap.route, Screen.Settings.route)) {
                         BottomNav(
                             currentRoute = currentRoute ?: "",
+                            language = appLanguage,
                             onScreenSelected = { screen ->
                                 navController.navigate(screen.route) {
                                     popUpTo(Screen.Feed.route) { saveState = true }
@@ -80,20 +91,32 @@ fun App() {
                     ) {
                         composable(Screen.Splash.route) {
                             SplashScreen(onGetStarted = {
-                                val nextRoute = if (preferences?.isOnboarded == true) Screen.Feed.route 
-                                               else Screen.Onboarding.route
+                                // Priority Check: If interests are empty, they ARE NOT onboarded correctly.
+                                val isCorrectlyOnboarded = preferences?.let { 
+                                    it.isOnboarded && it.interests.isNotEmpty() 
+                                } ?: false
+                                
+                                val nextRoute = if (isCorrectlyOnboarded) Screen.Feed.route else Screen.Onboarding.route
+                                
                                 navController.navigate(nextRoute) {
                                     popUpTo(Screen.Splash.route) { inclusive = true }
                                 }
                             })
                         }
                         composable(Screen.Onboarding.route) {
-                            OnboardingScreen(onComplete = {
-                                viewModel.updatePreferences(it)
-                                navController.navigate(Screen.Feed.route) {
-                                    popUpTo(Screen.Onboarding.route) { inclusive = true }
+                            OnboardingScreen(
+                                onComplete = {
+                                    viewModel.updatePreferences(it)
+                                    navController.navigate(Screen.Feed.route) {
+                                        popUpTo(Screen.Onboarding.route) { inclusive = true }
+                                    }
+                                },
+                                onBack = {
+                                    navController.navigate(Screen.Splash.route) {
+                                        popUpTo(Screen.Onboarding.route) { inclusive = true }
+                                    }
                                 }
-                            })
+                            )
                         }
                         composable(Screen.Feed.route) {
                             preferences?.let { prefs ->
@@ -195,6 +218,7 @@ fun App() {
 @Composable
 fun BottomNav(
     currentRoute: String,
+    language: String,
     onScreenSelected: (Screen) -> Unit,
     onExploreClick: () -> Unit,
 ) {
@@ -209,7 +233,7 @@ fun BottomNav(
             selected = currentRoute == Screen.Feed.route,
             onClick = { onScreenSelected(Screen.Feed) },
             icon = { Icon(Icons.Default.Bolt, null) },
-            label = { Text("For you", fontSize = 12.sp, fontWeight = FontWeight.Medium) },
+            label = { Text(com.example.tattle.ui.theme.LocalStrings.get("for_you", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = com.example.tattle.ui.theme.Primary,
                 selectedTextColor = com.example.tattle.ui.theme.Primary,
@@ -222,7 +246,7 @@ fun BottomNav(
             selected = false,
             onClick = onExploreClick,
             icon = { Icon(Icons.Default.Explore, null) },
-            label = { Text("Explore", fontSize = 12.sp, fontWeight = FontWeight.Medium) },
+            label = { Text(com.example.tattle.ui.theme.LocalStrings.get("explore", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
             colors = NavigationBarItemDefaults.colors(
                 unselectedIconColor = com.example.tattle.ui.theme.TextPrimary,
                 unselectedTextColor = com.example.tattle.ui.theme.TextPrimary,
@@ -233,7 +257,7 @@ fun BottomNav(
             selected = currentRoute == Screen.Recap.route,
             onClick = { onScreenSelected(Screen.Recap) },
             icon = { Icon(Icons.Default.BarChart, null) },
-            label = { Text("Trending", fontSize = 12.sp, fontWeight = FontWeight.Medium) },
+            label = { Text(com.example.tattle.ui.theme.LocalStrings.get("trending", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = com.example.tattle.ui.theme.Primary,
                 selectedTextColor = com.example.tattle.ui.theme.Primary,
@@ -246,7 +270,7 @@ fun BottomNav(
             selected = currentRoute == Screen.Settings.route,
             onClick = { onScreenSelected(Screen.Settings) },
             icon = { Icon(Icons.Default.Favorite, null) },
-            label = { Text("Saved", fontSize = 12.sp, fontWeight = FontWeight.Medium) },
+            label = { Text(com.example.tattle.ui.theme.LocalStrings.get("saved", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = com.example.tattle.ui.theme.Primary,
                 selectedTextColor = com.example.tattle.ui.theme.Primary,

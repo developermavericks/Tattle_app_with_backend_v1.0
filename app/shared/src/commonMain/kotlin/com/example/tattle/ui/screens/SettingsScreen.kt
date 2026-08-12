@@ -32,6 +32,7 @@ fun SettingsScreen(
 ) {
     val scrollState = rememberScrollState()
     var showLanguageDialog by remember { mutableStateOf(false) }
+    val language = preferences.language
 
     Column(
         modifier = Modifier
@@ -43,7 +44,7 @@ fun SettingsScreen(
     ) {
         // Header
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(text = stringResource(Res.string.settings), color = Color.Black, fontSize = 40.sp, fontWeight = FontWeight.Bold)
+            Text(text = LocalStrings.get("settings", language), color = Color.Black, fontSize = 40.sp, fontWeight = FontWeight.Bold)
             Text(text = stringResource(Res.string.configure_experience), color = Color.Gray, fontSize = 16.sp)
         }
 
@@ -118,14 +119,14 @@ fun SettingsScreen(
                 Column(modifier = Modifier.padding(vertical = 10.dp)) {
                     MenuItem(
                         icon = Icons.Default.Language,
-                        title = stringResource(Res.string.language),
+                        title = LocalStrings.get("language", language),
                         subtitle = preferences.language,
                         onClick = { showLanguageDialog = true }
                     )
                     HorizontalDivider(color = Color.Black.copy(alpha = 0.05f), thickness = 1.dp, modifier = Modifier.padding(horizontal = 20.dp))
                     MenuItem(
                         icon = Icons.Default.Delete,
-                        title = stringResource(Res.string.clear_history),
+                        title = LocalStrings.get("clear_history", language),
                         subtitle = stringResource(Res.string.clear_history_desc),
                         onClick = onPurgeData
                     )

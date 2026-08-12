@@ -1,0 +1,14 @@
+2026-08-12 16:34:26.741 [main] INFO  io.ktor.server.Application - Autoreload is disabled because the development mode is off.
+2026-08-12 16:34:26.892 [main] INFO  io.ktor.server.Application - Application started in 0.328 seconds.
+2026-08-12 16:34:27.113 [DefaultDispatcher-worker-1] INFO  io.ktor.server.Application - Responding at http://127.0.0.1:8080
+2026-08-12 16:34:38.614 [eventLoopGroupProxy-4-1] TRACE io.ktor.server.routing.Routing - Trace for []
+/, segment:0 -> SUCCESS @ /
+  / [<slash>], segment:0 -> SUCCESS @ / [<slash>]
+    / [<slash>, (method:GET)], segment:0 -> SUCCESS @ / [<slash>, (method:GET)]
+  /login, segment:0 -> FAILURE "Selector didn't match" @ /login
+  /register, segment:0 -> FAILURE "Selector didn't match" @ /register
+Matched routes:
+  "" -> "<slash>" -> "(method:GET)"
+Routing resolve result:
+  SUCCESS @ / [<slash>, (method:GET)]
+2026-08-12 16:34:38.629 [eventLoopGroupProxy-4-1] TRACE i.k.s.p.c.ContentNegotiation - Skipping because body is already converted.
