@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.googleServices)
 }
 
 kotlin {
@@ -16,6 +17,16 @@ dependencies {
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)
+
+    // SMS Gateway dependencies
+    implementation(libs.ktor.serverCore)
+    implementation(libs.ktor.serverCIO)
+    implementation(libs.ktor.serverContentNegotiation)
+    implementation(libs.ktor.serializationGson)
+    implementation(libs.ktor.client.cio)
+
+    implementation(platform(libs.firebase.android.bom))
+    implementation(libs.firebase.android.auth)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)

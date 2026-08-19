@@ -36,10 +36,9 @@ import com.example.tattle.models.NotificationsPrefs
 import com.example.tattle.models.UserPreferences
 import com.example.tattle.ui.theme.*
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.resources.stringResource
 import tattle.app.shared.generated.resources.*
 
-data class Interest(val id: String, val label: String, val icon: String)
+data class Interest(val id: String, val icon: String)
 
 @Composable
 fun OnboardingScreen(
@@ -53,23 +52,23 @@ fun OnboardingScreen(
     var notificationsEnabled by remember { mutableStateOf<Boolean?>(null) }
 
     val interestsList = listOf(
-        Interest("Entertainment", "Entertainment", "🎬"),
-        Interest("Bollywood", "Bollywood", "🎞️"),
-        Interest("Gaming", "Gaming", "🎮"),
-        Interest("Tech", "Tech", "💻"),
-        Interest("Climate", "Climate", "🌍"),
-        Interest("Pop Culture", "Pop Culture", "🎶"),
-        Interest("Money", "Money", "💰"),
-        Interest("Science & Space", "Science & Space", "🚀"),
-        Interest("Fashion", "Fashion", "👗"),
-        Interest("AI & Robotics", "AI & Robotics", "🤖"),
-        Interest("Wellness", "Wellness", "🧘"),
-        Interest("Sports", "Sports", "⚽")
+        Interest("entertainment", "🎬"),
+        Interest("bollywood", "🎞️"),
+        Interest("gaming", "🎮"),
+        Interest("tech", "💻"),
+        Interest("climate", "🌍"),
+        Interest("pop_culture", "🎶"),
+        Interest("money", "💰"),
+        Interest("science_space", "🚀"),
+        Interest("fashion", "👗"),
+        Interest("ai_robotics", "🤖"),
+        Interest("wellness", "🧘"),
+        Interest("sports", "⚽")
     )
 
     Scaffold(
         topBar = {
-            OnboardingHeader(step = step, onBack = { 
+            OnboardingHeader(step = step, language = language, onBack = { 
                 if (step > 1) step-- else onBack() 
             })
         },
@@ -138,10 +137,11 @@ fun OnboardingScreen(
                 ) {
                     when (targetStep) {
                         1 -> LanguageStep(selectedLanguage = language, onLanguageSelected = { language = it })
-                        2 -> AgeStep(age = age, onAgeChange = { if (it.length <= 3) age = it.filter { c -> c.isDigit() } })
+                        2 -> AgeStep(age = age, language = language, onAgeChange = { if (it.length <= 3) age = it.filter { c -> c.isDigit() } })
                         3 -> InterestStep(
                             interests = interestsList,
                             selectedInterests = selectedInterests,
+                            language = language,
                             onToggle = { id ->
                                 if (selectedInterests.contains(id)) selectedInterests.remove(id)
                                 else selectedInterests.add(id)
@@ -149,6 +149,7 @@ fun OnboardingScreen(
                         )
                         4 -> NotificationStep(
                             isEnabled = notificationsEnabled == true,
+                            language = language,
                             onToggle = { notificationsEnabled = !(notificationsEnabled ?: false) }
                         )
                     }
@@ -159,7 +160,7 @@ fun OnboardingScreen(
 }
 
 @Composable
-fun OnboardingHeader(step: Int, onBack: () -> Unit) {
+fun OnboardingHeader(step: Int, language: String, onBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -171,7 +172,7 @@ fun OnboardingHeader(step: Int, onBack: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack, modifier = Modifier.size(24.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.back), tint = Color.Black)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, LocalStrings.get("back", language), tint = Color.Black)
             }
             Spacer(modifier = Modifier.weight(1f))
             Box(
@@ -179,7 +180,7 @@ fun OnboardingHeader(step: Int, onBack: () -> Unit) {
                     .width(120.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE8E8E8))
+                    .background(Color(0xFFF5F5F5))
             ) {
                 Box(
                     modifier = Modifier
@@ -234,14 +235,14 @@ fun OnboardingFooter(
 fun LanguageStep(selectedLanguage: String, onLanguageSelected: (String) -> Unit) {
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         Text(
-            text = stringResource(Res.string.select_your_language),
+            text = LocalStrings.get("select_your_language", selectedLanguage),
             color = Color.Black,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         )
         Text(
-            text = stringResource(Res.string.choose_primary_language),
+            text = LocalStrings.get("choose_primary_language", selectedLanguage),
             color = Color.Black,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
@@ -257,7 +258,7 @@ fun LanguageStep(selectedLanguage: String, onLanguageSelected: (String) -> Unit)
                     .padding(vertical = 8.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected) Primary else Color(0xFFE8E8E8)
+                    containerColor = if (isSelected) Primary else Color(0xFFF5F5F5)
                 )
             ) {
                 Box(modifier = Modifier.padding(24.dp)) {
@@ -274,7 +275,7 @@ fun LanguageStep(selectedLanguage: String, onLanguageSelected: (String) -> Unit)
 }
 
 @Composable
-fun AgeStep(age: String, onAgeChange: (String) -> Unit) {
+fun AgeStep(age: String, language: String, onAgeChange: (String) -> Unit) {
     val isError = age.isNotEmpty() && (age.toIntOrNull() ?: 0) !in 13..100
 
     Column(
@@ -282,14 +283,14 @@ fun AgeStep(age: String, onAgeChange: (String) -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = stringResource(Res.string.your_age),
+            text = LocalStrings.get("your_age", language),
             color = Color.Black,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         )
         Text(
-            text = stringResource(Res.string.age_desc),
+            text = LocalStrings.get("age_desc", language),
             color = Color.Black,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
@@ -332,7 +333,7 @@ fun AgeStep(age: String, onAgeChange: (String) -> Unit) {
         
         if (isError) {
             Text(
-                stringResource(Res.string.invalid_age),
+                LocalStrings.get("invalid_age", language),
                 color = Primary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
@@ -343,16 +344,16 @@ fun AgeStep(age: String, onAgeChange: (String) -> Unit) {
 }
 
 @Composable
-fun ColumnScope.InterestStep(interests: List<Interest>, selectedInterests: SnapshotStateList<String>, onToggle: (String) -> Unit) {
+fun ColumnScope.InterestStep(interests: List<Interest>, selectedInterests: SnapshotStateList<String>, language: String, onToggle: (String) -> Unit) {
     Text(
-        text = stringResource(Res.string.what_are_you_into),
+        text = LocalStrings.get("what_are_you_into", language),
         color = Color.Black,
         fontSize = 32.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
     )
     Text(
-        text = stringResource(Res.string.pick_interests),
+        text = LocalStrings.get("pick_interests", language),
         color = Color.Black,
         fontSize = 16.sp,
         fontWeight = FontWeight.Medium,
@@ -387,7 +388,7 @@ fun ColumnScope.InterestStep(interests: List<Interest>, selectedInterests: Snaps
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
                     Text(
-                        text = interest.label,
+                        text = LocalStrings.get(interest.id, language),
                         color = if (isSelected) Color.White else Color.Black,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
@@ -401,20 +402,20 @@ fun ColumnScope.InterestStep(interests: List<Interest>, selectedInterests: Snaps
 }
 
 @Composable
-fun NotificationStep(isEnabled: Boolean, onToggle: () -> Unit) {
+fun NotificationStep(isEnabled: Boolean, language: String, onToggle: () -> Unit) {
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = stringResource(Res.string.stay_in_loop),
+            text = LocalStrings.get("stay_in_loop", language),
             color = Color.Black,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         )
         Text(
-            text = stringResource(Res.string.notification_desc),
+            text = LocalStrings.get("notification_desc", language),
             color = Color.Black,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,

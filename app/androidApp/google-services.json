@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "89061167642",
+    "project_id": "tattle-87d24",
+    "storage_bucket": "tattle-87d24.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:89061167642:android:0b41fb6a7539e5f4b0b7a3",
+        "android_client_info": {
+          "package_name": "com.example.tattle"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAg97n06vL8vxW-PKZTUHfhYti4ebNhUwg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

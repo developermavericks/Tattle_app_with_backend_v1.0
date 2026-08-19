@@ -37,6 +37,7 @@ fun BriefView(
     onShare: () -> Unit,
     onLaunchFullText: () -> Unit
 ) {
+    val language = LocalAppLanguage.current
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -49,7 +50,7 @@ fun BriefView(
                 .fillMaxWidth()
                 .fillMaxHeight(0.95f)
                 .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                .background(Color(0xFFE8E8E8))
+                .background(Color.White)
                 .clickable(enabled = false) {}
                 .padding(24.dp)
         ) {
@@ -66,7 +67,7 @@ fun BriefView(
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = "Trending",
+                            text = LocalStrings.get("trending", language),
                             color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
@@ -128,7 +129,7 @@ fun BriefView(
 
                 // Takeaways
                 Text(
-                    text = "CORE TAKEAWAYS",
+                    text = LocalStrings.get("core_takeaways", language),
                     color = Primary,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
@@ -141,7 +142,7 @@ fun BriefView(
                             .fillMaxWidth()
                             .padding(bottom = 12.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFD9D9D9))
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
                     ) {
                         Text(
                             text = bullet,
@@ -157,7 +158,7 @@ fun BriefView(
 
                 // Why It Matters
                 Text(
-                    text = "WHY IT MATTERS",
+                    text = LocalStrings.get("why_it_matters", language),
                     color = Primary,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
@@ -167,7 +168,7 @@ fun BriefView(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFD9D9D9))
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
                 ) {
                     Text(
                         text = article.whyItMatters,
@@ -190,66 +191,13 @@ fun BriefView(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "LAUNCH FULL-DEPTH REPORT",
+                        text = LocalStrings.get("launch_full_report", language),
                         color = Primary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(Icons.Default.OpenInNew, null, tint = Primary, modifier = Modifier.size(20.dp))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TakeawayItem(index: Int, bullet: String) {
-    val icon = when (index) {
-        0 -> Icons.Default.Settings
-        1 -> Icons.Default.Bolt
-        else -> Icons.Default.Shield
-    }
-    
-    val parts = bullet.split(": ")
-    val hasTitle = parts.size > 1
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Icon(icon, null, tint = Primary, modifier = Modifier.size(20.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                if (hasTitle) {
-                    Text(
-                        text = parts[0].uppercase(),
-                        color = Primary,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        text = parts.drop(1).joinToString(": "),
-                        color = TextMuted,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        lineHeight = 16.sp
-                    )
-                } else {
-                    Text(
-                        text = bullet,
-                        color = TextMuted,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        lineHeight = 16.sp
-                    )
                 }
             }
         }

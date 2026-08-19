@@ -48,6 +48,7 @@ fun ArticleCard(
     currentReaction: String?,
     modifier: Modifier = Modifier
 ) {
+    val language = LocalAppLanguage.current
     var showReactions by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val offsetX = remember { Animatable(0f) }
@@ -160,7 +161,7 @@ fun ArticleCard(
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Text(
-                                text = "Trending",
+                                text = LocalStrings.get("trending", language),
                                 color = Color.White,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold

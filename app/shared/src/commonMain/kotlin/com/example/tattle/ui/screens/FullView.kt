@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,6 +45,7 @@ fun FullView(
     nextArticle: Article? = null,
     onLoadNextArticle: (Article) -> Unit = {}
 ) {
+    val language = LocalAppLanguage.current
     val scrollState = rememberScrollState()
     val scrollProgress = if (scrollState.maxValue > 0) scrollState.value.toFloat() / scrollState.maxValue else 0f
     var isFollowingThread by remember { mutableStateOf(false) }
@@ -76,7 +76,7 @@ fun FullView(
                         }
                         Column {
                             Text(
-                                text = "TATTLE EXCLUSIVE",
+                                text = LocalStrings.get("exclusive", language),
                                 color = TextMuted,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Black,
@@ -99,7 +99,7 @@ fun FullView(
                         }
                         IconButton(onClick = onToggleBookmark) {
                             Icon(
-                                imageVector = if (isBookmarked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                                imageVector = if (isBookmarked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = null,
                                 tint = if (isBookmarked) Secondary else TextMuted,
                                 modifier = Modifier.size(20.dp)
@@ -305,7 +305,7 @@ fun FullView(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Text(
-                                    text = if (isFollowingThread) "Following" else "Follow Thread",
+                                    text = if (isFollowingThread) LocalStrings.get("following", language) else LocalStrings.get("follow_thread", language),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.sp
@@ -319,7 +319,7 @@ fun FullView(
                 if (nextArticle != null) {
                     Column(modifier = Modifier.padding(top = 32.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(
-                            text = "UP NEXT",
+                            text = LocalStrings.get("up_next", language),
                             color = TextMuted,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,

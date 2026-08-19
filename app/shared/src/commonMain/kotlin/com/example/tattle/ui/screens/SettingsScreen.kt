@@ -21,8 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tattle.models.UserPreferences
 import com.example.tattle.ui.theme.*
-import org.jetbrains.compose.resources.stringResource
-import tattle.app.shared.generated.resources.*
 
 @Composable
 fun SettingsScreen(
@@ -32,7 +30,7 @@ fun SettingsScreen(
 ) {
     val scrollState = rememberScrollState()
     var showLanguageDialog by remember { mutableStateOf(false) }
-    val language = preferences.language
+    val language = LocalAppLanguage.current
 
     Column(
         modifier = Modifier
@@ -45,28 +43,28 @@ fun SettingsScreen(
         // Header
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(text = LocalStrings.get("settings", language), color = Color.Black, fontSize = 40.sp, fontWeight = FontWeight.Bold)
-            Text(text = stringResource(Res.string.configure_experience), color = Color.Gray, fontSize = 16.sp)
+            Text(text = LocalStrings.get("configure_experience", language), color = Color.Gray, fontSize = 16.sp)
         }
 
         // Notifications
-        SettingsSection(title = stringResource(Res.string.notifications)) {
+        SettingsSection(title = LocalStrings.get("notifications", language)) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFE8E8E8))
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
             ) {
                 Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     SwitchItem(
-                        title = stringResource(Res.string.daily_briefings),
-                        subtitle = stringResource(Res.string.daily_briefings_desc),
+                        title = LocalStrings.get("daily_briefings", language),
+                        subtitle = LocalStrings.get("daily_briefings_desc", language),
                         checked = preferences.notifications.dailyBriefings,
                         onCheckedChange = { 
                             onUpdatePreferences(preferences.copy(notifications = preferences.notifications.copy(dailyBriefings = it))) 
                         }
                     )
                     SwitchItem(
-                        title = stringResource(Res.string.breaking_alerts),
-                        subtitle = stringResource(Res.string.breaking_alerts_desc),
+                        title = LocalStrings.get("breaking_alerts", language),
+                        subtitle = LocalStrings.get("breaking_alerts_desc", language),
                         checked = preferences.notifications.breakingAlerts,
                         onCheckedChange = { 
                             onUpdatePreferences(preferences.copy(notifications = preferences.notifications.copy(breakingAlerts = it))) 
@@ -77,7 +75,7 @@ fun SettingsScreen(
         }
 
         // Interests Tuning
-        SettingsSection(title = stringResource(Res.string.your_interests)) {
+        SettingsSection(title = LocalStrings.get("your_interests", language)) {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -99,9 +97,9 @@ fun SettingsScreen(
                 
                 AssistChip(
                     onClick = { /* Add more logic */ },
-                    label = { Text(stringResource(Res.string.add), fontWeight = FontWeight.Bold) },
+                    label = { Text(LocalStrings.get("add", language), fontWeight = FontWeight.Bold) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = Color(0xFFE8E8E8),
+                        containerColor = Color(0xFFF5F5F5),
                         labelColor = Color.Black
                     ),
                     shape = RoundedCornerShape(12.dp)
@@ -110,11 +108,11 @@ fun SettingsScreen(
         }
 
         // Preferences
-        SettingsSection(title = stringResource(Res.string.preferences)) {
+        SettingsSection(title = LocalStrings.get("preferences", language)) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFE8E8E8))
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
             ) {
                 Column(modifier = Modifier.padding(vertical = 10.dp)) {
                     MenuItem(
@@ -127,7 +125,7 @@ fun SettingsScreen(
                     MenuItem(
                         icon = Icons.Default.Delete,
                         title = LocalStrings.get("clear_history", language),
-                        subtitle = stringResource(Res.string.clear_history_desc),
+                        subtitle = LocalStrings.get("clear_history_desc", language),
                         onClick = onPurgeData
                     )
                 }
@@ -148,7 +146,7 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showLanguageDialog = false },
             containerColor = Color.White,
-            title = { Text(stringResource(Res.string.select_language), color = Color.Black) },
+            title = { Text(LocalStrings.get("select_language", language), color = Color.Black) },
             text = {
                 Column {
                     listOf("English", "Spanish", "French", "German").forEach { lang ->
@@ -175,7 +173,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showLanguageDialog = false }) {
-                    Text(stringResource(Res.string.close), color = Primary)
+                    Text(LocalStrings.get("close", language), color = Primary)
                 }
             }
         )
@@ -234,17 +232,5 @@ fun MenuItem(icon: ImageVector, title: String, subtitle: String, onClick: () -> 
             }
         }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.LightGray, modifier = Modifier.size(20.dp))
-    }
-}
-
-@Composable
-fun AnalyticsItem(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(text = label, color = TextMuted, fontSize = 12.sp)
-        Text(text = value, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
     }
 }

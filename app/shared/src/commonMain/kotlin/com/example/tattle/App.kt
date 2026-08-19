@@ -23,17 +23,19 @@ import androidx.navigation.compose.rememberNavController
 import com.example.tattle.data.MockData
 import com.example.tattle.models.Article
 import com.example.tattle.ui.screens.*
+import com.example.tattle.ui.theme.LocalAppLanguage
+import com.example.tattle.ui.theme.LocalStrings
 import com.example.tattle.ui.theme.TattleTheme
 import com.example.tattle.ui.viewmodels.AppViewModel
 import org.koin.compose.KoinContext
 import org.koin.compose.viewmodel.koinViewModel
 
 sealed class Screen(val route: String) {
-    object Splash : Screen("splash")
-    object Onboarding : Screen("onboarding")
-    object Feed : Screen("feed")
-    object Recap : Screen("recap")
-    object Settings : Screen("settings")
+    data object Splash : Screen("splash")
+    data object Onboarding : Screen("onboarding")
+    data object Feed : Screen("feed")
+    data object Recap : Screen("recap")
+    data object Settings : Screen("settings")
 }
 
 @Composable
@@ -44,169 +46,170 @@ fun App() {
         val navController = rememberNavController()
         val appLanguage = preferences?.language ?: "English"
 
-        TattleTheme {
-            val currentBackStack by navController.currentBackStackEntryAsState()
-            val currentRoute = currentBackStack?.destination?.route
+        CompositionLocalProvider(LocalAppLanguage provides appLanguage) {
+            TattleTheme {
+                val currentBackStack by navController.currentBackStackEntryAsState()
+                val currentRoute = currentBackStack?.destination?.route
 
-            // Overlays
-            var activeArticle by remember { mutableStateOf<Article?>(null) }
-            var activeBriefArticle by remember { mutableStateOf<Article?>(null) }
+                // Overlays
+                var activeArticle by remember { mutableStateOf<Article?>(null) }
+                var activeBriefArticle by remember { mutableStateOf<Article?>(null) }
 
-            // Auto-redirect from Splash if already onboarded
-            LaunchedEffect(preferences?.isOnboarded) {
-                if (preferences?.isOnboarded == true && currentRoute == Screen.Splash.route) {
-                    navController.navigate(Screen.Feed.route) {
-                        popUpTo(Screen.Splash.route) { inclusive = true }
+                // Auto-redirect from Splash if already onboarded
+                LaunchedEffect(preferences?.isOnboarded) {
+                    if (preferences?.isOnboarded == true && currentRoute == Screen.Splash.route) {
+                        navController.navigate(Screen.Feed.route) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
+                        }
                     }
                 }
-            }
 
-            Scaffold(
-                bottomBar = {
-                    if (currentRoute in listOf(Screen.Feed.route, Screen.Recap.route, Screen.Settings.route)) {
-                        BottomNav(
-                            currentRoute = currentRoute ?: "",
-                            language = appLanguage,
-                            onScreenSelected = { screen ->
-                                navController.navigate(screen.route) {
-                                    popUpTo(Screen.Feed.route) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            onExploreClick = {
-                                activeBriefArticle = MockData.articles.random()
-                            }
-                        )
-                    }
-                },
-                containerColor = com.example.tattle.ui.theme.Background
-            ) { paddingValues ->
-                Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                    NavHost(
-                        navController = navController,
-                        startDestination = Screen.Splash.route,
-                        enterTransition = { fadeIn(tween(500)) },
-                        exitTransition = { fadeOut(tween(500)) }
-                    ) {
-                        composable(Screen.Splash.route) {
-                            SplashScreen(onGetStarted = {
-                                // Priority Check: If interests are empty, they ARE NOT onboarded correctly.
-                                val isCorrectlyOnboarded = preferences?.let { 
-                                    it.isOnboarded && it.interests.isNotEmpty() 
-                                } ?: false
-                                
-                                val nextRoute = if (isCorrectlyOnboarded) Screen.Feed.route else Screen.Onboarding.route
-                                
-                                navController.navigate(nextRoute) {
-                                    popUpTo(Screen.Splash.route) { inclusive = true }
-                                }
-                            })
-                        }
-                        composable(Screen.Onboarding.route) {
-                            OnboardingScreen(
-                                onComplete = {
-                                    viewModel.updatePreferences(it)
-                                    navController.navigate(Screen.Feed.route) {
-                                        popUpTo(Screen.Onboarding.route) { inclusive = true }
+                Scaffold(
+                    bottomBar = {
+                        if (currentRoute in listOf(Screen.Feed.route, Screen.Recap.route, Screen.Settings.route)) {
+                            BottomNav(
+                                currentRoute = currentRoute ?: "",
+                                onScreenSelected = { screen ->
+                                    navController.navigate(screen.route) {
+                                        popUpTo(Screen.Feed.route) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
                                 },
-                                onBack = {
-                                    navController.navigate(Screen.Splash.route) {
-                                        popUpTo(Screen.Onboarding.route) { inclusive = true }
-                                    }
+                                onExploreClick = {
+                                    activeBriefArticle = MockData.articles.random()
                                 }
                             )
                         }
-                        composable(Screen.Feed.route) {
-                            preferences?.let { prefs ->
-                                FeedScreen(
-                                    preferences = prefs,
-                                    onUpdatePreferences = { viewModel.updatePreferences(it) },
-                                    onOpenArticle = { activeArticle = it },
-                                    onLaunchBrief = { activeBriefArticle = it },
-                                    onShareArticle = { /* Share simulation */ }
-                                )
+                    },
+                    containerColor = com.example.tattle.ui.theme.Background
+                ) { paddingValues ->
+                    Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                        NavHost(
+                            navController = navController,
+                            startDestination = Screen.Splash.route,
+                            enterTransition = { fadeIn(tween(500)) },
+                            exitTransition = { fadeOut(tween(500)) }
+                        ) {
+                            composable(Screen.Splash.route) {
+                                SplashScreen(onGetStarted = {
+                                    // Priority Check: If interests are empty, they ARE NOT onboarded correctly.
+                                    val isCorrectlyOnboarded = preferences?.let { 
+                                        it.isOnboarded && it.interests.isNotEmpty() 
+                                    } ?: false
+                                    
+                                    val nextRoute = if (isCorrectlyOnboarded) Screen.Feed.route else Screen.Onboarding.route
+                                    
+                                    navController.navigate(nextRoute) {
+                                        popUpTo(Screen.Splash.route) { inclusive = true }
+                                    }
+                                })
                             }
-                        }
-                        composable(Screen.Recap.route) {
-                            preferences?.let { prefs ->
-                                RecapScreen(
-                                    preferences = prefs,
-                                    onTuneFeed = { navController.navigate(Screen.Settings.route) }
-                                )
-                            }
-                        }
-                        composable(Screen.Settings.route) {
-                            preferences?.let { prefs ->
-                                SettingsScreen(
-                                    preferences = prefs,
-                                    onUpdatePreferences = { viewModel.updatePreferences(it) },
-                                    onPurgeData = {
-                                        viewModel.purgeData()
+                            composable(Screen.Onboarding.route) {
+                                OnboardingScreen(
+                                    onComplete = {
+                                        viewModel.updatePreferences(it)
+                                        navController.navigate(Screen.Feed.route) {
+                                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                                        }
+                                    },
+                                    onBack = {
                                         navController.navigate(Screen.Splash.route) {
-                                            popUpTo(0) { inclusive = true }
+                                            popUpTo(Screen.Onboarding.route) { inclusive = true }
                                         }
                                     }
                                 )
                             }
-                        }
-                    }
-
-                    // Overlays
-                    AnimatedVisibility(
-                        visible = activeBriefArticle != null,
-                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
-                    ) {
-                        activeBriefArticle?.let { article ->
-                            BriefView(
-                                article = article,
-                                isBookmarked = preferences?.bookmarks?.contains(article.id) == true,
-                                onClose = { activeBriefArticle = null },
-                                onToggleBookmark = {
-                                    preferences?.let { prefs ->
-                                        val newBookmarks = if (prefs.bookmarks.contains(article.id)) {
-                                            prefs.bookmarks - article.id
-                                        } else {
-                                            prefs.bookmarks + article.id
-                                        }
-                                        viewModel.updatePreferences(prefs.copy(bookmarks = newBookmarks))
-                                    }
-                                },
-                                onShare = { /* Share */ },
-                                onLaunchFullText = {
-                                    activeArticle = article
-                                    activeBriefArticle = null
+                            composable(Screen.Feed.route) {
+                                preferences?.let { prefs ->
+                                    FeedScreen(
+                                        preferences = prefs,
+                                        onUpdatePreferences = { viewModel.updatePreferences(it) },
+                                        onOpenArticle = { activeArticle = it },
+                                        onLaunchBrief = { activeBriefArticle = it },
+                                        onShareArticle = { /* Share simulation */ }
+                                    )
                                 }
-                            )
-                        }
-                    }
-
-                    AnimatedVisibility(
-                        visible = activeArticle != null,
-                        enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-                        exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
-                    ) {
-                        activeArticle?.let { article ->
-                            FullView(
-                                article = article,
-                                isBookmarked = preferences?.bookmarks?.contains(article.id) == true,
-                                onClose = { activeArticle = null },
-                                onToggleBookmark = {
-                                    preferences?.let { prefs ->
-                                        val newBookmarks = if (prefs.bookmarks.contains(article.id)) {
-                                            prefs.bookmarks - article.id
-                                        } else {
-                                            prefs.bookmarks + article.id
+                            }
+                            composable(Screen.Recap.route) {
+                                preferences?.let { prefs ->
+                                    RecapScreen(
+                                        preferences = prefs,
+                                        onTuneFeed = { navController.navigate(Screen.Settings.route) }
+                                    )
+                                }
+                            }
+                            composable(Screen.Settings.route) {
+                                preferences?.let { prefs ->
+                                    SettingsScreen(
+                                        preferences = prefs,
+                                        onUpdatePreferences = { viewModel.updatePreferences(it) },
+                                        onPurgeData = {
+                                            viewModel.purgeData()
+                                            navController.navigate(Screen.Splash.route) {
+                                                popUpTo(0) { inclusive = true }
+                                            }
                                         }
-                                        viewModel.updatePreferences(prefs.copy(bookmarks = newBookmarks))
+                                    )
+                                }
+                            }
+                        }
+
+                        // Overlays
+                        AnimatedVisibility(
+                            visible = activeBriefArticle != null,
+                            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                        ) {
+                            activeBriefArticle?.let { article ->
+                                BriefView(
+                                    article = article,
+                                    isBookmarked = preferences?.bookmarks?.contains(article.id) == true,
+                                    onClose = { activeBriefArticle = null },
+                                    onToggleBookmark = {
+                                        preferences?.let { prefs ->
+                                            val newBookmarks = if (prefs.bookmarks.contains(article.id)) {
+                                                prefs.bookmarks - article.id
+                                            } else {
+                                                prefs.bookmarks + article.id
+                                            }
+                                            viewModel.updatePreferences(prefs.copy(bookmarks = newBookmarks))
+                                        }
+                                    },
+                                    onShare = { /* Share */ },
+                                    onLaunchFullText = {
+                                        activeArticle = article
+                                        activeBriefArticle = null
                                     }
-                                },
-                                onShare = { /* Share */ },
-                                nextArticle = MockData.articles.getOrNull((MockData.articles.indexOf(article) + 1) % MockData.articles.size),
-                                onLoadNextArticle = { activeArticle = it }
-                            )
+                                )
+                            }
+                        }
+
+                        AnimatedVisibility(
+                            visible = activeArticle != null,
+                            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
+                            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                        ) {
+                            activeArticle?.let { article ->
+                                FullView(
+                                    article = article,
+                                    isBookmarked = preferences?.bookmarks?.contains(article.id) == true,
+                                    onClose = { activeArticle = null },
+                                    onToggleBookmark = {
+                                        preferences?.let { prefs ->
+                                            val newBookmarks = if (prefs.bookmarks.contains(article.id)) {
+                                                prefs.bookmarks - article.id
+                                            } else {
+                                                prefs.bookmarks + article.id
+                                            }
+                                            viewModel.updatePreferences(prefs.copy(bookmarks = newBookmarks))
+                                        }
+                                    },
+                                    onShare = { /* Share */ },
+                                    nextArticle = MockData.articles.getOrNull((MockData.articles.indexOf(article) + 1) % MockData.articles.size),
+                                    onLoadNextArticle = { activeArticle = it }
+                                )
+                            }
                         }
                     }
                 }
@@ -218,10 +221,10 @@ fun App() {
 @Composable
 fun BottomNav(
     currentRoute: String,
-    language: String,
     onScreenSelected: (Screen) -> Unit,
     onExploreClick: () -> Unit,
 ) {
+    val language = LocalAppLanguage.current
     NavigationBar(
         containerColor = Color.White,
         tonalElevation = 8.dp,
@@ -233,7 +236,7 @@ fun BottomNav(
             selected = currentRoute == Screen.Feed.route,
             onClick = { onScreenSelected(Screen.Feed) },
             icon = { Icon(Icons.Default.Bolt, null) },
-            label = { Text(com.example.tattle.ui.theme.LocalStrings.get("for_you", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
+            label = { Text(LocalStrings.get("for_you", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = com.example.tattle.ui.theme.Primary,
                 selectedTextColor = com.example.tattle.ui.theme.Primary,
@@ -246,7 +249,7 @@ fun BottomNav(
             selected = false,
             onClick = onExploreClick,
             icon = { Icon(Icons.Default.Explore, null) },
-            label = { Text(com.example.tattle.ui.theme.LocalStrings.get("explore", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
+            label = { Text(LocalStrings.get("explore", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
             colors = NavigationBarItemDefaults.colors(
                 unselectedIconColor = com.example.tattle.ui.theme.TextPrimary,
                 unselectedTextColor = com.example.tattle.ui.theme.TextPrimary,
@@ -257,7 +260,7 @@ fun BottomNav(
             selected = currentRoute == Screen.Recap.route,
             onClick = { onScreenSelected(Screen.Recap) },
             icon = { Icon(Icons.Default.BarChart, null) },
-            label = { Text(com.example.tattle.ui.theme.LocalStrings.get("trending", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
+            label = { Text(LocalStrings.get("trending", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = com.example.tattle.ui.theme.Primary,
                 selectedTextColor = com.example.tattle.ui.theme.Primary,
@@ -270,7 +273,7 @@ fun BottomNav(
             selected = currentRoute == Screen.Settings.route,
             onClick = { onScreenSelected(Screen.Settings) },
             icon = { Icon(Icons.Default.Favorite, null) },
-            label = { Text(com.example.tattle.ui.theme.LocalStrings.get("saved", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
+            label = { Text(LocalStrings.get("saved", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = com.example.tattle.ui.theme.Primary,
                 selectedTextColor = com.example.tattle.ui.theme.Primary,

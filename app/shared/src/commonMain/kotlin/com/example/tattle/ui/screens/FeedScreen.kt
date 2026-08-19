@@ -42,19 +42,20 @@ fun FeedScreen(
     onShareArticle: (Article) -> Unit,
     isOffline: Boolean = false
 ) {
-    var activeTab by remember { mutableStateOf("For You") }
+    val language = LocalAppLanguage.current
+    var activeTab by remember { mutableStateOf("for_you") }
     var currentIndex by remember { mutableStateOf(0) }
     var showSurvey by remember { mutableStateOf(false) }
     var cardsSinceSurvey by remember { mutableStateOf(0) }
 
-    val tabsList = listOf("For You", "Tech", "Culture", "Politics", "Saved")
+    val tabsList = listOf("for_you", "tech", "culture", "politics", "saved")
 
     val filteredArticles = remember(activeTab, preferences.bookmarks, preferences.language) {
         val baseList = MockData.articles.filter { it.language == preferences.language }
         when (activeTab) {
-            "Saved" -> baseList.filter { preferences.bookmarks.contains(it.id) }
-            "For You" -> baseList
-            else -> baseList.filter { it.category.contains(activeTab, ignoreCase = true) }
+            "saved" -> baseList.filter { preferences.bookmarks.contains(it.id) }
+            "for_you" -> baseList
+            else -> baseList.filter { it.category.lowercase().contains(activeTab.lowercase()) }
         }
     }
 
@@ -64,10 +65,11 @@ fun FeedScreen(
         containerColor = Color.White,
         topBar = {
             Column(modifier = Modifier.background(Color.White)) {
-                FeedHeader(preferences = preferences)
+                FeedHeader(preferences = preferences, language = language)
                 TabsRow(
                     tabs = tabsList,
                     activeTab = activeTab,
+                    language = language,
                     onTabSelected = {
                         activeTab = it
                         currentIndex = 0
@@ -86,7 +88,7 @@ fun FeedScreen(
             contentAlignment = Alignment.Center
         ) {
             if (isOffline) {
-                OfflineBanner(modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp))
+                OfflineBanner(language = language, modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp))
             }
 
             if (showSurvey) {
@@ -134,7 +136,7 @@ fun FeedScreen(
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             } else if (currentArticle == null) {
-                EmptyState(activeTab) { activeTab = "For You" }
+                EmptyState(activeTab, language) { activeTab = "for_you" }
             } else {
                 BoxWithConstraints(
                     modifier = Modifier
@@ -256,7 +258,7 @@ private fun proceedNext(
 }
 
 @Composable
-fun FeedHeader(preferences: UserPreferences) {
+fun FeedHeader(preferences: UserPreferences, language: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -266,7 +268,7 @@ fun FeedHeader(preferences: UserPreferences) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text = "Tattle",
+                text = LocalStrings.get("app_name", language),
                 color = Color.Black,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
@@ -281,7 +283,7 @@ fun FeedHeader(preferences: UserPreferences) {
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "AD FREE",
+                        text = LocalStrings.get("ad_free", language),
                         color = Primary,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
@@ -296,23 +298,23 @@ fun FeedHeader(preferences: UserPreferences) {
 }
 
 @Composable
-fun TabsRow(tabs: List<String>, activeTab: String, onTabSelected: (String) -> Unit) {
+fun TabsRow(tabs: List<String>, activeTab: String, language: String, onTabSelected: (String) -> Unit) {
     LazyRow(
         contentPadding = PaddingValues(horizontal = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.padding(bottom = 16.dp)
     ) {
-        items(tabs) { tab ->
-            val isActive = tab == activeTab
+        items(tabs) { tabKey ->
+            val isActive = tabKey == activeTab
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isActive) Primary else Color(0xFFE8E8E8))
-                    .clickable { onTabSelected(tab) }
+                    .background(if (isActive) Primary else Color(0xFFF5F5F5))
+                    .clickable { onTabSelected(tabKey) }
                     .padding(horizontal = 20.dp, vertical = 10.dp)
             ) {
                 Text(
-                    text = tab,
+                    text = LocalStrings.get(tabKey, language),
                     color = if (isActive) Color.White else Color.Black,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
@@ -328,7 +330,7 @@ fun ProgressLine(progress: Float) {
         modifier = Modifier
             .fillMaxWidth()
             .height(2.dp)
-            .background(Color.White.copy(alpha = 0.05f))
+            .background(Color.Black.copy(alpha = 0.05f))
     ) {
         Box(
             modifier = Modifier
@@ -340,38 +342,38 @@ fun ProgressLine(progress: Float) {
 }
 
 @Composable
-fun OfflineBanner(modifier: Modifier = Modifier) {
+fun OfflineBanner(language: String, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .background(Surface.copy(alpha = 0.9f), RoundedCornerShape(50))
-            .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(50))
+            .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(50))
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(modifier = Modifier.size(6.dp).background(TextMuted, CircleShape))
-            Text(text = "You're offline — showing saved cached stories.", color = TextMuted, fontSize = 11.sp)
+            Text(text = LocalStrings.get("offline_msg", language), color = TextMuted, fontSize = 11.sp)
         }
     }
 }
 
 @Composable
-fun EmptyState(activeTab: String, onBrowse: () -> Unit) {
+fun EmptyState(activeTab: String, language: String, onBrowse: () -> Unit) {
     Column(
         modifier = Modifier.padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Icon(Icons.Default.Bolt, null, tint = TextMuted, modifier = Modifier.size(40.dp))
-        Text(text = "Deck Empty", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+        Text(text = LocalStrings.get("deck_empty", language), color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
         Text(
-            text = if (activeTab == "Saved") "You haven't bookmarked any articles yet." else "Come back later — new stories drop throughout the day.",
+            text = if (activeTab == "saved") LocalStrings.get("no_bookmarks", language) else LocalStrings.get("new_stories_later", language),
             color = TextMuted,
             fontSize = 12.sp,
             textAlign = TextAlign.Center
         )
-        if (activeTab == "Saved") {
+        if (activeTab == "saved") {
             TextButton(onClick = onBrowse) {
-                Text(text = "BROWSE FEED", color = Primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Text(text = LocalStrings.get("browse_feed", language), color = Primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
             }
         }
     }

@@ -4,17 +4,19 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -22,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tattle.models.Survey
 import com.example.tattle.ui.theme.*
-import kotlinx.coroutines.delay
 
 @Composable
 fun SurveyCard(
@@ -30,321 +31,215 @@ fun SurveyCard(
     onComplete: () -> Unit,
     onSkip: () -> Unit,
     onWatchAd: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
-    var started by remember { mutableStateOf(value = false) }
-    var currentQuestionIdx by remember { mutableStateOf(0) }
-    val selectedAnswers = remember { mutableStateMapOf<String, String>() }
-    var completed by remember { mutableStateOf(false) }
+    val language = LocalAppLanguage.current
+    var currentQuestionIndex by remember { mutableStateOf(0) }
+    var selectedOptionIndex by remember { mutableStateOf<Int?>(null) }
+    var isFinished by remember { mutableStateOf(false) }
 
-    val totalQuestions = survey.questions.size
-    val currentQuestion = survey.questions.getOrNull(currentQuestionIdx)
-
-    LaunchedEffect(completed) {
-        if (completed) {
-            delay(1200)
-            onComplete()
-        }
-    }
+    val currentQuestion = survey.questions[currentQuestionIndex]
+    val progress = (currentQuestionIndex + 1).toFloat() / survey.questions.size
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(440.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.2f))
+            .height(550.dp),
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Decorative background circle
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Header with Progress
             Box(
                 modifier = Modifier
-                    .offset(x = 100.dp, y = (-100).dp)
-                    .size(144.dp)
-                    .blur(40.dp)
-                    .background(Primary.copy(alpha = 0.05f), CircleShape)
-            )
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .background(Color(0xFFF5F5F5))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(progress)
+                        .background(Primary)
+                )
+            }
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(20.dp)
+                    .padding(24.dp)
             ) {
-                // Header
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.BarChart,
-                            contentDescription = null,
-                            tint = Primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                if (!isFinished) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = LocalStrings.get("help_improve", language),
+                                color = Primary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.sp
+                            )
+                            Text(
+                                text = "${currentQuestionIndex + 1}/${survey.questions.size}",
+                                color = Color.Gray,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        
                         Text(
-                            text = "TATTLE CHECKPOINT",
-                            color = Primary,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 2.sp
+                            text = LocalStrings.get("skip", language),
+                            color = Color.LightGray,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable { onSkip() }
                         )
                     }
 
-                    if (started && !completed) {
-                        Text(
-                            text = "Step ${currentQuestionIdx + 1} of $totalQuestions",
-                            color = TextMuted,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                HorizontalDivider(color = Color.White.copy(alpha = 0.05f), thickness = 1.dp)
+                    Text(
+                        text = currentQuestion.question,
+                        color = Color.Black,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 30.sp
+                    )
 
-                Box(modifier = Modifier.weight(1f)) {
-                    AnimatedContent(
-                        targetState = when {
-                            completed -> SurveyState.COMPLETED
-                            started -> SurveyState.QUESTION
-                            else -> SurveyState.INTRO
-                        },
-                        transitionSpec = {
-                            fadeIn(tween(300)) togetherWith fadeOut(tween(300))
-                        },
-                        label = "SurveyStateAnimation"
-                    ) { state ->
-                        when (state) {
-                            SurveyState.INTRO -> {
-                                IntroState { started = true }
-                            }
-                            SurveyState.QUESTION -> {
-                                currentQuestion?.let { q ->
-                                    QuestionState(
-                                        question = q.question,
-                                        options = q.options,
-                                        onSelect = { opt ->
-                                            selectedAnswers[q.id] = opt
-                                            if (currentQuestionIdx < (totalQuestions - 1)) {
-                                                currentQuestionIdx++
-                                            } else {
-                                                completed = true
-                                            }
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        currentQuestion.options.forEachIndexed { index, option ->
+                            val isSelected = selectedOptionIndex == index
+                            Card(
+                                onClick = { selectedOptionIndex = index },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isSelected) Primary else Color(0xFFF5F5F5)
+                                ),
+                                border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = 0.05f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(20.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clip(CircleShape)
+                                            .background(if (isSelected) Color.White.copy(alpha = 0.2f) else Color.White)
+                                            .border(1.dp, if (isSelected) Color.White else Color.Black.copy(alpha = 0.1f), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (isSelected) {
+                                            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color.White))
                                         }
+                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Text(
+                                        text = option,
+                                        color = if (isSelected) Color.White else Color.Black,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
-                            SurveyState.COMPLETED -> {
-                                CompletedState()
-                            }
                         }
                     }
-                }
 
-                // Footer for Intro
-                if (!started) {
-                    Column(
+                    Button(
+                        onClick = {
+                            if (currentQuestionIndex < survey.questions.size - 1) {
+                                currentQuestionIndex++
+                                selectedOptionIndex = null
+                            } else {
+                                isFinished = true
+                            }
+                        },
+                        enabled = selectedOptionIndex != null,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .height(64.dp),
+                        shape = RoundedCornerShape(32.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF232323),
+                            disabledContainerColor = Color(0xFFE8E8E8)
+                        )
                     ) {
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.05f), thickness = 1.dp)
-                        TextButton(
-                            onClick = onSkip,
-                            modifier = Modifier.fillMaxWidth()
+                        Text(
+                            text = if (currentQuestionIndex == survey.questions.size - 1) LocalStrings.get("finish", language) else LocalStrings.get("next", language),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                    }
+                } else {
+                    // Reward / Finished State
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(Primary.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Timer, null, modifier = Modifier.size(14.dp), tint = TextMuted)
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "REMIND ME LATER",
-                                    color = TextMuted,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp
-                                )
-                            }
+                            Icon(Icons.Default.Celebration, null, tint = Primary, modifier = Modifier.size(40.dp))
                         }
-                        TextButton(
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Text(
+                            text = LocalStrings.get("claim_ad_free", language),
+                            color = Color.Black,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Black,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = LocalStrings.get("ad_desc", language),
+                            color = Color.Gray,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(48.dp))
+
+                        Button(
                             onClick = onWatchAd,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth().height(64.dp),
+                            shape = RoundedCornerShape(32.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.PlayArrow, null, modifier = Modifier.size(14.dp), tint = TextMuted.copy(alpha = 0.6f))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "WATCH A STANDARD VIDEO AD INSTEAD",
-                                    color = TextMuted.copy(alpha = 0.6f),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 2.sp
-                                )
-                            }
+                            Icon(Icons.Default.PlayArrow, null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(LocalStrings.get("watch_ad", language), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        TextButton(onClick = onComplete) {
+                            Text(LocalStrings.get("get_ad_free", language), color = Color.Gray, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
         }
-    }
-}
-
-private enum class SurveyState { INTRO, QUESTION, COMPLETED }
-
-@Composable
-private fun IntroState(onStart: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            modifier = Modifier
-                .size(112.dp)
-                .background(Primary.copy(alpha = 0.1f), CircleShape)
-                .border(1.dp, Primary.copy(alpha = 0.25f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.BarChart,
-                contentDescription = null,
-                tint = Primary,
-                modifier = Modifier.size(56.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Keep your feed 100% ad-free",
-            color = Color.White,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Provide quick feedback on three opinions to clear your next reading session.",
-            color = TextMuted,
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center,
-            lineHeight = 18.sp,
-            modifier = Modifier.padding(horizontal = 24.dp)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = onStart,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = Color.Black),
-            shape = RoundedCornerShape(28.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "START QUICK SURVEY", fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuestionState(
-    question: String,
-    options: List<String>,
-    onSelect: (String) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = question,
-            color = Color.White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.ExtraBold,
-            lineHeight = 20.sp,
-            modifier = Modifier.padding(bottom = 20.dp)
-        )
-
-        options.forEach { opt ->
-            Card(
-                onClick = { onSelect(opt) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 5.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Background.copy(alpha = 0.5f)),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
-            ) {
-                Text(
-                    text = opt,
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(14.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CompletedState() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .background(Secondary.copy(alpha = 0.2f), CircleShape)
-                .border(1.dp, Secondary.copy(alpha = 0.35f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = null,
-                tint = Secondary,
-                modifier = Modifier.size(32.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Checkpoint Cleared!",
-            color = Color.White,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
-        Text(
-            text = "AD-FREE ACTIVE • 3 HOURS",
-            color = Secondary,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 2.sp,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Text(
-            text = "Your session is now unlocked and 100% ad-free. Keep stayin' sharp!",
-            color = TextMuted,
-            fontSize = 11.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 24.dp)
-        )
     }
 }

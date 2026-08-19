@@ -29,6 +29,7 @@ fun RecapScreen(
     preferences: UserPreferences,
     onTuneFeed: () -> Unit,
 ) {
+    val language = LocalAppLanguage.current
     val cardsRead = preferences.totalCardsRead.coerceAtLeast(15)
     val streakDays = preferences.streak.coerceAtLeast(12)
 
@@ -52,7 +53,7 @@ fun RecapScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = "LIMIT REACHED",
+                    text = LocalStrings.get("limit_reached", language),
                     color = Color.White,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
@@ -60,14 +61,14 @@ fun RecapScreen(
             }
 
             Text(
-                text = "Daily Recap",
+                text = LocalStrings.get("daily_recap", language),
                 color = Color.Black,
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "Come back later — new stories drop throughout the day.",
+                text = LocalStrings.get("new_stories_later", language),
                 color = Color.Black,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
@@ -86,14 +87,14 @@ fun RecapScreen(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.Book,
                 value = cardsRead.toString(),
-                label = "Cards Read",
+                label = LocalStrings.get("cards_read", language),
                 iconColor = Primary
             )
             MetricCard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.Whatshot,
-                value = "$streakDays Days",
-                label = "Streak",
+                value = "$streakDays ${LocalStrings.get("streak_days", language)}",
+                label = LocalStrings.get("streak", language),
                 iconColor = Primary
             )
         }
@@ -102,7 +103,7 @@ fun RecapScreen(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8E8E8))
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
         ) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                 Row(
@@ -120,12 +121,12 @@ fun RecapScreen(
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        LegendItem(modifier = Modifier.weight(1f), color = Primary, label = "Tech & AI")
-                        LegendItem(modifier = Modifier.weight(1f), color = Color.DarkGray, label = "Pop Culture")
+                        LegendItem(modifier = Modifier.weight(1f), color = Primary, label = LocalStrings.get("tech_ai", language))
+                        LegendItem(modifier = Modifier.weight(1f), color = Color.DarkGray, label = LocalStrings.get("pop_culture", language))
                     }
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        LegendItem(modifier = Modifier.weight(1f), color = Color.Gray, label = "Politics")
-                        LegendItem(modifier = Modifier.weight(1f), color = Color.LightGray, label = "Other Genres")
+                        LegendItem(modifier = Modifier.weight(1f), color = Color.Gray, label = LocalStrings.get("politics", language))
+                        LegendItem(modifier = Modifier.weight(1f), color = Color.LightGray, label = LocalStrings.get("other_genres", language))
                     }
                 }
             }
@@ -139,14 +140,14 @@ fun RecapScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF232323), contentColor = Color.White),
                 shape = RoundedCornerShape(32.dp)
             ) {
-                Text("SHARE YOUR RECAP", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(LocalStrings.get("share_recap", language), fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
 
             TextButton(
                 onClick = onTuneFeed,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("TUNE YOUR FEED", color = Color.Gray, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(LocalStrings.get("tune_feed", language), color = Color.Gray, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
         
@@ -165,7 +166,7 @@ fun MetricCard(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8E8E8))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
