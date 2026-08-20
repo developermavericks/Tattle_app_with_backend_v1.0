@@ -17,6 +17,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -35,8 +37,6 @@ import androidx.compose.ui.unit.sp
 import com.example.tattle.models.NotificationsPrefs
 import com.example.tattle.models.UserPreferences
 import com.example.tattle.ui.theme.*
-import org.jetbrains.compose.resources.painterResource
-import tattle.app.shared.generated.resources.*
 
 data class Interest(val id: String, val icon: String)
 
@@ -48,6 +48,7 @@ fun OnboardingScreen(
     var step by remember { mutableStateOf(1) }
     var language by remember { mutableStateOf("English") }
     var age by remember { mutableStateOf("") }
+    var dob by remember { mutableStateOf("") }
     val selectedInterests = remember { mutableStateListOf<String>() }
     var notificationsEnabled by remember { mutableStateOf<Boolean?>(null) }
 
@@ -78,13 +79,12 @@ fun OnboardingScreen(
                 step = step,
                 language = language,
                 canGoNext = when (step) {
-                    1 -> true
-                    2 -> age.isNotEmpty() && (age.toIntOrNull() ?: 0) in 13..100
-                    3 -> selectedInterests.size >= 3
+                    1 -> (age.isNotEmpty() && (age.toIntOrNull() ?: 0) in 13..100) || dob.length == 8
+                    2 -> selectedInterests.size >= 3
                     else -> true
                 },
                 onNext = {
-                    if (step < 4) {
+                    if (step < 3) {
                         step++
                     } else {
                         val prefs = UserPreferences(
@@ -136,9 +136,14 @@ fun OnboardingScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     when (targetStep) {
-                        1 -> LanguageStep(selectedLanguage = language, onLanguageSelected = { language = it })
-                        2 -> AgeStep(age = age, language = language, onAgeChange = { if (it.length <= 3) age = it.filter { c -> c.isDigit() } })
-                        3 -> InterestStep(
+                        1 -> AgeStep(
+                            age = age, 
+                            dob = dob,
+                            language = language, 
+                            onAgeChange = { if (it.length <= 3) age = it.filter { c -> c.isDigit() } },
+                            onDobChange = { if (it.length <= 8) dob = it.filter { c -> c.isDigit() } }
+                        )
+                        2 -> InterestStep(
                             interests = interestsList,
                             selectedInterests = selectedInterests,
                             language = language,
@@ -147,7 +152,7 @@ fun OnboardingScreen(
                                 else selectedInterests.add(id)
                             }
                         )
-                        4 -> NotificationStep(
+                        3 -> NotificationStep(
                             isEnabled = notificationsEnabled == true,
                             language = language,
                             onToggle = { notificationsEnabled = !(notificationsEnabled ?: false) }
@@ -184,7 +189,7 @@ fun OnboardingHeader(step: Int, language: String, onBack: () -> Unit) {
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(step / 4f)
+                        .fillMaxWidth(step / 3f)
                         .fillMaxHeight()
                         .clip(CircleShape)
                         .background(Primary)
@@ -223,7 +228,7 @@ fun OnboardingFooter(
             shape = RoundedCornerShape(28.dp)
         ) {
             Text(
-                text = if (step == 4) LocalStrings.get("finish", language) else LocalStrings.get("next", language),
+                text = if (step == 3) LocalStrings.get("finish", language) else LocalStrings.get("next", language),
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
@@ -232,106 +237,77 @@ fun OnboardingFooter(
 }
 
 @Composable
-fun LanguageStep(selectedLanguage: String, onLanguageSelected: (String) -> Unit) {
-    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Text(
-            text = LocalStrings.get("select_your_language", selectedLanguage),
-            color = Color.Black,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-        )
-        Text(
-            text = LocalStrings.get("choose_primary_language", selectedLanguage),
-            color = Color.Black,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
-        )
-
-        listOf("English", "Spanish", "French", "German").forEach { lang ->
-            val isSelected = lang == selectedLanguage
-            Card(
-                onClick = { onLanguageSelected(lang) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected) Primary else Color(0xFFF5F5F5)
-                )
-            ) {
-                Box(modifier = Modifier.padding(24.dp)) {
-                    Text(
-                        text = lang,
-                        color = if (isSelected) Color.White else Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun AgeStep(age: String, language: String, onAgeChange: (String) -> Unit) {
-    val isError = age.isNotEmpty() && (age.toIntOrNull() ?: 0) !in 13..100
+fun AgeStep(age: String, dob: String, language: String, onAgeChange: (String) -> Unit, onDobChange: (String) -> Unit) {
+    val isAgeError = age.isNotEmpty() && (age.toIntOrNull() ?: 0) !in 13..100
 
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = LocalStrings.get("your_age", language),
+            text = "When were you born?",
             color = Color.Black,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         )
         Text(
-            text = LocalStrings.get("age_desc", language),
+            text = "So we can keep your feed age-appropriate.",
             color = Color.Black,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 48.dp)
+            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
         )
 
-        Box(modifier = Modifier.width(200.dp), contentAlignment = Alignment.Center) {
-        TextField(
-            value = age,
-            onValueChange = onAgeChange,
-            textStyle = TextStyle(
-                fontSize = 64.sp,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-                color = if (isError) Primary else Color.Black
-            ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true,
+        OutlinedTextField(
+            value = dob,
+            onValueChange = onDobChange,
             modifier = Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = if (isError) Primary else Color.Black,
-                unfocusedIndicatorColor = Color(0xFFE8E8E8),
-                cursorColor = Primary
-            ),
-            placeholder = {
-                Text(
-                    "00",
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    color = Color(0xFFE8E8E8),
-                    fontSize = 64.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
+            label = { Text("DDMMYYYY") },
+            placeholder = { Text("e.g. 15081995") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            shape = RoundedCornerShape(12.dp)
         )
-    }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("or simply type your age", color = Color.Gray, fontSize = 14.sp)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box(modifier = Modifier.width(150.dp), contentAlignment = Alignment.Center) {
+            TextField(
+                value = age,
+                onValueChange = onAgeChange,
+                textStyle = TextStyle(
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
+                    color = if (isAgeError) Primary else Color.Black
+                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = if (isAgeError) Primary else Color.Black,
+                    unfocusedIndicatorColor = Color(0xFFE8E8E8),
+                    cursorColor = Primary
+                ),
+                placeholder = {
+                    Text(
+                        "00",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFFE8E8E8),
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            )
+        }
         
-        if (isError) {
+        if (isAgeError) {
             Text(
                 LocalStrings.get("invalid_age", language),
                 color = Primary,
@@ -415,20 +391,27 @@ fun NotificationStep(isEnabled: Boolean, language: String, onToggle: () -> Unit)
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         )
         Text(
-            text = LocalStrings.get("notification_desc", language),
+            text = if (!isEnabled) LocalStrings.get("notification_desc", language) else "You're all set! We'll keep you posted.",
             color = Color.Black,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.fillMaxWidth().padding(bottom = 48.dp)
         )
 
-        Image(
-            painter = painterResource(if (isEnabled) Res.drawable.notification else Res.drawable.notification_off),
-            contentDescription = "Notification Bell",
+        Box(
             modifier = Modifier
-                .size(240.dp)
+                .size(200.dp)
+                .clip(CircleShape)
+                .background(if (isEnabled) Primary else Color(0xFFF5F5F5))
                 .clickable { onToggle() },
-            contentScale = ContentScale.Fit
-        )
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isEnabled) Icons.Default.NotificationsActive else Icons.Default.Notifications,
+                contentDescription = "Notification Bell",
+                modifier = Modifier.size(100.dp),
+                tint = if (isEnabled) Color.White else Color.Gray
+            )
+        }
     }
 }

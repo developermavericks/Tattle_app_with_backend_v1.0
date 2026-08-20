@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tattle.data.MockData
+import com.example.tattle.models.Article
 import com.example.tattle.models.UserPreferences
 import com.example.tattle.ui.theme.*
 
@@ -26,6 +28,7 @@ import com.example.tattle.ui.theme.*
 fun SettingsScreen(
     preferences: UserPreferences,
     onUpdatePreferences: (UserPreferences) -> Unit,
+    onOpenArticle: (Article) -> Unit,
     onPurgeData: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -128,6 +131,58 @@ fun SettingsScreen(
                         subtitle = LocalStrings.get("clear_history_desc", language),
                         onClick = onPurgeData
                     )
+                }
+            }
+        }
+
+        // Read History
+        val historyArticles = MockData.articles.filter { preferences.readHistory.contains(it.id) }
+        if (historyArticles.isNotEmpty()) {
+            SettingsSection(title = "READ HISTORY") {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                ) {
+                    Column(modifier = Modifier.padding(vertical = 10.dp)) {
+                        historyArticles.reversed().take(5).forEachIndexed { index, article ->
+                            MenuItem(
+                                icon = Icons.Default.History,
+                                title = article.headline,
+                                subtitle = "Read on ${article.publishedAt}", // Simplification: using publishedAt as a proxy or just showing it's read
+                                onClick = { onOpenArticle(article) }
+                            )
+                            if (index < historyArticles.take(5).size - 1) {
+                                HorizontalDivider(color = Color.Black.copy(alpha = 0.05f), thickness = 1.dp, modifier = Modifier.padding(horizontal = 20.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Saved Articles
+        val savedArticles = MockData.articles.filter { preferences.bookmarks.contains(it.id) }
+        if (savedArticles.isNotEmpty()) {
+            SettingsSection(title = "SAVED ARTICLES") {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                ) {
+                    Column(modifier = Modifier.padding(vertical = 10.dp)) {
+                        savedArticles.reversed().take(5).forEachIndexed { index, article ->
+                            MenuItem(
+                                icon = Icons.Default.Bookmark,
+                                title = article.headline,
+                                subtitle = article.category,
+                                onClick = { onOpenArticle(article) }
+                            )
+                            if (index < savedArticles.take(5).size - 1) {
+                                HorizontalDivider(color = Color.Black.copy(alpha = 0.05f), thickness = 1.dp, modifier = Modifier.padding(horizontal = 20.dp))
+                            }
+                        }
+                    }
                 }
             }
         }

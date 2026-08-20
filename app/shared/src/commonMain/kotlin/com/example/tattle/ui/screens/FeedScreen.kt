@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ThumbDown
@@ -40,6 +41,8 @@ fun FeedScreen(
     onOpenArticle: (Article) -> Unit,
     onLaunchBrief: (Article) -> Unit,
     onShareArticle: (Article) -> Unit,
+    onOpenSettings: () -> Unit,
+    onSessionEnd: () -> Unit,
     isOffline: Boolean = false
 ) {
     val language = LocalAppLanguage.current
@@ -47,8 +50,10 @@ fun FeedScreen(
     var currentIndex by remember { mutableStateOf(0) }
     var showSurvey by remember { mutableStateOf(false) }
     var cardsSinceSurvey by remember { mutableStateOf(0) }
+    var sessionCardsRead by remember { mutableStateOf(0) }
+    val sessionCap = 5 // Example cap
 
-    val tabsList = listOf("for_you", "tech", "culture", "politics", "saved")
+    val tabsList = listOf("for_you", "tech", "culture", "politics")
 
     val filteredArticles = remember(activeTab, preferences.bookmarks, preferences.language) {
         val baseList = MockData.articles.filter { it.language == preferences.language }
@@ -65,7 +70,7 @@ fun FeedScreen(
         containerColor = Color.White,
         topBar = {
             Column(modifier = Modifier.background(Color.White)) {
-                FeedHeader(preferences = preferences, language = language)
+                FeedHeader(preferences = preferences, language = language, onOpenSettings = onOpenSettings)
                 TabsRow(
                     tabs = tabsList,
                     activeTab = activeTab,
@@ -210,15 +215,20 @@ fun FeedScreen(
                                         totalCardsRead = preferences.totalCardsRead + 1
                                     )
                                 )
-                                proceedNext(
-                                    currentIndex,
-                                    filteredArticles.size,
-                                    { currentIndex = it },
-                                    { cardsSinceSurvey = it },
-                                    cardsSinceSurvey,
-                                    { showSurvey = it },
-                                    preferences
-                                )
+                                sessionCardsRead++
+                                if (sessionCardsRead >= sessionCap) {
+                                    onSessionEnd()
+                                } else {
+                                    proceedNext(
+                                        currentIndex,
+                                        filteredArticles.size,
+                                        { currentIndex = it },
+                                        { cardsSinceSurvey = it },
+                                        cardsSinceSurvey,
+                                        { showSurvey = it },
+                                        preferences
+                                    )
+                                }
                             },
                             onReaction = { emoji ->
                                 val newReactions = preferences.reactions + (currentArticle.id to emoji)
@@ -258,7 +268,7 @@ private fun proceedNext(
 }
 
 @Composable
-fun FeedHeader(preferences: UserPreferences, language: String) {
+fun FeedHeader(preferences: UserPreferences, language: String, onOpenSettings: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -289,6 +299,9 @@ fun FeedHeader(preferences: UserPreferences, language: String) {
                         fontWeight = FontWeight.Bold
                     )
                 }
+            }
+            IconButton(onClick = onOpenSettings) {
+                Icon(Icons.Default.Settings, null, tint = Color.Black)
             }
             IconButton(onClick = {}) {
                 Icon(Icons.Default.Notifications, null, tint = Color.Black)

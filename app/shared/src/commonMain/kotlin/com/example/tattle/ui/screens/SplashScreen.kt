@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -98,6 +99,16 @@ fun SplashScreen(onGetStarted: () -> Unit) {
                 text = LocalStrings.get("continue_email", language),
                 icon = null,
                 onClick = { showEmailLogin = true }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Trouble signing in?",
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.clickable { /* TODO: Open support */ }
             )
         }
 

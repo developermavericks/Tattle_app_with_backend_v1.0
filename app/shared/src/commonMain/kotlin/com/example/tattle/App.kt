@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,7 +21,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.tattle.data.MockData
 import com.example.tattle.models.Article
 import com.example.tattle.ui.screens.*
 import com.example.tattle.ui.theme.LocalAppLanguage
@@ -34,6 +34,9 @@ sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
     data object Onboarding : Screen("onboarding")
     data object Feed : Screen("feed")
+    data object Explore : Screen("explore")
+    data object Trending : Screen("trending")
+    data object Saved : Screen("saved")
     data object Recap : Screen("recap")
     data object Settings : Screen("settings")
 }
@@ -66,7 +69,15 @@ fun App() {
 
                 Scaffold(
                     bottomBar = {
-                        if (currentRoute in listOf(Screen.Feed.route, Screen.Recap.route, Screen.Settings.route)) {
+                        if (currentRoute in listOf(
+                                Screen.Feed.route,
+                                Screen.Explore.route,
+                                Screen.Trending.route,
+                                Screen.Saved.route,
+                                Screen.Recap.route,
+                                Screen.Settings.route
+                            )
+                        ) {
                             BottomNav(
                                 currentRoute = currentRoute ?: "",
                                 onScreenSelected = { screen ->
@@ -75,9 +86,6 @@ fun App() {
                                         launchSingleTop = true
                                         restoreState = true
                                     }
-                                },
-                                onExploreClick = {
-                                    activeBriefArticle = MockData.articles.random()
                                 }
                             )
                         }
@@ -127,7 +135,36 @@ fun App() {
                                         onUpdatePreferences = { viewModel.updatePreferences(it) },
                                         onOpenArticle = { activeArticle = it },
                                         onLaunchBrief = { activeBriefArticle = it },
-                                        onShareArticle = { /* Share simulation */ }
+                                        onShareArticle = { /* Share simulation */ },
+                                        onOpenSettings = { navController.navigate(Screen.Settings.route) },
+                                        onSessionEnd = { navController.navigate(Screen.Recap.route) }
+                                    )
+                                }
+                            }
+                            composable(Screen.Explore.route) {
+                                preferences?.let { prefs ->
+                                    ExploreScreen(
+                                        preferences = prefs,
+                                        onOpenArticle = { activeArticle = it },
+                                        onOpenSettings = { navController.navigate(Screen.Settings.route) }
+                                    )
+                                }
+                            }
+                            composable(Screen.Trending.route) {
+                                preferences?.let { prefs ->
+                                    TrendingScreen(
+                                        preferences = prefs,
+                                        onOpenArticle = { activeArticle = it },
+                                        onOpenSettings = { navController.navigate(Screen.Settings.route) }
+                                    )
+                                }
+                            }
+                            composable(Screen.Saved.route) {
+                                preferences?.let { prefs ->
+                                    SavedScreen(
+                                        preferences = prefs,
+                                        onOpenArticle = { activeArticle = it },
+                                        onOpenSettings = { navController.navigate(Screen.Settings.route) }
                                     )
                                 }
                             }
@@ -144,6 +181,7 @@ fun App() {
                                     SettingsScreen(
                                         preferences = prefs,
                                         onUpdatePreferences = { viewModel.updatePreferences(it) },
+                                        onOpenArticle = { activeArticle = it },
                                         onPurgeData = {
                                             viewModel.purgeData()
                                             navController.navigate(Screen.Splash.route) {
@@ -205,9 +243,7 @@ fun App() {
                                             viewModel.updatePreferences(prefs.copy(bookmarks = newBookmarks))
                                         }
                                     },
-                                    onShare = { /* Share */ },
-                                    nextArticle = MockData.articles.getOrNull((MockData.articles.indexOf(article) + 1) % MockData.articles.size),
-                                    onLoadNextArticle = { activeArticle = it }
+                                    onShare = { /* Share */ }
                                 )
                             }
                         }
@@ -222,7 +258,6 @@ fun App() {
 fun BottomNav(
     currentRoute: String,
     onScreenSelected: (Screen) -> Unit,
-    onExploreClick: () -> Unit,
 ) {
     val language = LocalAppLanguage.current
     NavigationBar(
@@ -246,20 +281,22 @@ fun BottomNav(
             )
         )
         NavigationBarItem(
-            selected = false,
-            onClick = onExploreClick,
+            selected = currentRoute == Screen.Explore.route,
+            onClick = { onScreenSelected(Screen.Explore) },
             icon = { Icon(Icons.Default.Explore, null) },
             label = { Text(LocalStrings.get("explore", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
             colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = com.example.tattle.ui.theme.Primary,
+                selectedTextColor = com.example.tattle.ui.theme.Primary,
                 unselectedIconColor = com.example.tattle.ui.theme.TextPrimary,
                 unselectedTextColor = com.example.tattle.ui.theme.TextPrimary,
                 indicatorColor = Color.Transparent
             )
         )
         NavigationBarItem(
-            selected = currentRoute == Screen.Recap.route,
-            onClick = { onScreenSelected(Screen.Recap) },
-            icon = { Icon(Icons.Default.BarChart, null) },
+            selected = currentRoute == Screen.Trending.route,
+            onClick = { onScreenSelected(Screen.Trending) },
+            icon = { Icon(Icons.AutoMirrored.Filled.TrendingUp, null) },
             label = { Text(LocalStrings.get("trending", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = com.example.tattle.ui.theme.Primary,
@@ -270,8 +307,8 @@ fun BottomNav(
             )
         )
         NavigationBarItem(
-            selected = currentRoute == Screen.Settings.route,
-            onClick = { onScreenSelected(Screen.Settings) },
+            selected = currentRoute == Screen.Saved.route,
+            onClick = { onScreenSelected(Screen.Saved) },
             icon = { Icon(Icons.Default.Favorite, null) },
             label = { Text(LocalStrings.get("saved", language), fontSize = 12.sp, fontWeight = FontWeight.Medium) },
             colors = NavigationBarItemDefaults.colors(
