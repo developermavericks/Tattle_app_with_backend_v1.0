@@ -26,28 +26,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tattle.PlatformConfig
 import com.example.tattle.auth.signInWithCode
 import com.example.tattle.auth.verifyPhoneNumber
 import com.example.tattle.ui.theme.LocalAppLanguage
 import com.example.tattle.ui.theme.LocalStrings
 import com.example.tattle.ui.theme.Primary
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.auth.auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.providers.builtin.OTP
 import io.github.jan.supabase.SupabaseClient
-import io.ktor.client.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.client.call.*
-import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import kotlinx.coroutines.launch
-
-@Serializable
-data class OtpVerifyRequest(val phoneNumber: String, val otp: String)
+import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(onGetStarted: () -> Unit) {
@@ -136,7 +126,6 @@ fun SplashScreen(onGetStarted: () -> Unit) {
 
 @Composable
 fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
-    val auth = Firebase.auth
     val language = LocalAppLanguage.current
     var phoneNumber by remember { mutableStateOf("") }
     var countryCode by remember { mutableStateOf("+91") }
@@ -282,14 +271,135 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                             error = "Please enter exactly 10 digits"
                                         }
                                     },
-                                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(56.dp)
+                                        .graphicsLayer {
+                                            if (isReady) {
+                                                scaleX = bounceScale
+                                                scaleY = bounceScale
+                                            }
+                                        },
                                     colors = ButtonDefaults.buttonColors(containerColor = if (isReady) Color(0xFF232323) else Color(0xFFE8E8E8)),
                                     shape = RoundedCornerShape(28.dp)
                                 ) {
                                     Text(LocalStrings.get("send_code", language), fontWeight = FontWeight.Bold)
                                 }
                             } else {
-                                // OTP verification screen...
+                                Text(
+                                    "${LocalStrings.get("enter_code_sent", language)} $countryCode $phoneNumber",
+                                    color = Color.Gray,
+                                    fontSize = 14.sp,
+                                    modifier = Modifier.padding(bottom = 16.dp)
+                                )
+                                
+                                val focusRequester = remember { FocusRequester() }
+                                LaunchedEffect(Unit) {
+                                    focusRequester.requestFocus()
+                                }
+
+                                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                    BasicTextField(
+                                        value = TextFieldValue(otp, selection = TextRange(otp.length)),
+                                        onValueChange = {
+                                            if (it.text.length <= 6) {
+                                                otp = it.text.filter { char -> char.isDigit() }
+                                                error = null
+                                            }
+                                        },
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        modifier = Modifier.focusRequester(focusRequester).size(1.dp).graphicsLayer { alpha = 0f }
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                                    ) {
+                                        repeat(6) { index ->
+                                            val char = otp.getOrNull(index)?.toString() ?: ""
+                                            val isFocused = otp.length == index
+                                            
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(42.dp)
+                                                    .border(
+                                                        width = 1.5.dp,
+                                                        color = if (isFocused) Primary else Color(0xFFE8E8E8),
+                                                        shape = RoundedCornerShape(10.dp)
+                                                    )
+                                                    .background(Color(0xFFF5F5F5), RoundedCornerShape(10.dp)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = char,
+                                                    fontSize = 20.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.Black
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                AnimatedVisibility(
+                                    visible = error != null,
+                                    enter = expandVertically() + fadeIn(),
+                                    exit = shrinkVertically() + fadeOut()
+                                ) {
+                                    Text(
+                                        error ?: "",
+                                        color = Primary,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(top = 8.dp, start = 8.dp)
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(24.dp))
+                                
+                                val isOtpReady = otp.length == 6
+                                Button(
+                                    onClick = { 
+                                        if (isOtpReady && (verificationId != null)) {
+                                            isLoading = true
+                                            scope.launch {
+                                                signInWithCode(
+                                                    verificationId = verificationId!!,
+                                                    code = otp,
+                                                    onSuccess = {
+                                                        isLoading = false
+                                                        onLoginSuccess()
+                                                    },
+                                                    onError = { msg ->
+                                                        error = msg
+                                                        isLoading = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(56.dp)
+                                        .graphicsLayer {
+                                            if (isOtpReady) {
+                                                scaleX = bounceScale
+                                                scaleY = bounceScale
+                                            }
+                                        },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isOtpReady) Color(0xFF232323) else Color(0xFFE8E8E8)
+                                    ),
+                                    shape = RoundedCornerShape(28.dp)
+                                ) {
+                                    Text(LocalStrings.get("verify_continue", language), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                }
+                                
+                                TextButton(
+                                    onClick = { isOtpSent = false },
+                                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
+                                ) {
+                                    Text(LocalStrings.get("edit_number", language), color = Color.Gray, fontSize = 14.sp)
+                                }
                             }
                         }
                     }
@@ -511,7 +621,7 @@ fun GoogleLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
 
     if (isLoading) {
         LaunchedEffect(Unit) {
-            kotlinx.coroutines.delay(1500)
+            delay(1500)
             onLoginSuccess()
         }
     }
@@ -529,7 +639,7 @@ fun LoginButton(text: String, icon: (@Composable () -> Unit)?, onClick: () -> Un
         shape = RoundedCornerShape(28.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (icon != null) icon()
+            icon?.invoke()
             Text(text, color = Color.White, fontWeight = FontWeight.SemiBold)
         }
     }

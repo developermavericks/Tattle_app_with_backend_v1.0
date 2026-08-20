@@ -1,30 +1,37 @@
 package com.example.tattle
 
-import android.app.*
-import android.content.Context
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
-import android.util.Log
-import com.example.tattle.PlatformConfig
 import android.telephony.SmsManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
-import io.ktor.serialization.gson.*
-import io.ktor.server.application.*
-import io.ktor.server.cio.*
-import io.ktor.server.engine.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import kotlinx.coroutines.*
-
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO as ClientCIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
-import io.ktor.client.request.*
-import io.ktor.http.*
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.serialization.gson.gson
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EmbeddedServer
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation as ServerContentNegotiation
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
@@ -34,7 +41,7 @@ data class GatewayRegisterRequest(val ip: String, val port: Int)
 class SmsGatewayService : Service() {
 
     private var server: EmbeddedServer<*, *>? = null
-    private val API_KEY = "TATTLE_CLEO_CM_MAVS"
+    private val apiKey = "TATTLE_CLEO_CM_MAVS"
     private val client = HttpClient(ClientCIO) {
         install(ClientContentNegotiation) {
             gson()
@@ -86,14 +93,14 @@ class SmsGatewayService : Service() {
         if (server != null) return
 
         server = embeddedServer(CIO, port = 8080) {
-            install(ContentNegotiation) { gson() }
+            install(ServerContentNegotiation) { gson() }
             
             routing {
                 post("/send-sms") {
                     val authHeader = call.request.headers["Authorization"]
-                    if (authHeader != "Bearer $API_KEY") {
+                    if (authHeader != "Bearer $apiKey") {
                         Log.w("SmsGateway", "Unauthorized request attempt")
-                        call.respond(io.ktor.http.HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Token"))
+                        call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Token"))
                         return@post
                     }
 
@@ -106,7 +113,7 @@ class SmsGatewayService : Service() {
                         call.respond(mapOf("status" to "success", "message" to "SMS Sent"))
                     } catch (e: Exception) {
                         Log.e("SmsGateway", "Failed to send SMS", e)
-                        call.respond(io.ktor.http.HttpStatusCode.InternalServerError, mapOf("error" to e.localizedMessage))
+                        call.respond(HttpStatusCode.InternalServerError, mapOf("error" to e.localizedMessage))
                     }
                 }
             }

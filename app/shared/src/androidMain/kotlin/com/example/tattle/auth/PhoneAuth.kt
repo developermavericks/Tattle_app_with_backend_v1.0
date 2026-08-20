@@ -10,8 +10,15 @@ import android.app.Activity
 import com.google.android.gms.tasks.OnCompleteListener
 import kotlinx.coroutines.tasks.await
 
+import java.lang.ref.WeakReference
+
 // This will be set by the MainActivity
-var currentActivity: Activity? = null
+private var _currentActivity: WeakReference<Activity>? = null
+var currentActivity: Activity?
+    get() = _currentActivity?.get()
+    set(value) {
+        _currentActivity = value?.let { WeakReference(it) }
+    }
 
 actual suspend fun verifyPhoneNumber(
     phoneNumber: String,
