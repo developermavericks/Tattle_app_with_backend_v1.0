@@ -22,6 +22,7 @@ dependencies {
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverCIO)
     implementation(libs.ktor.serverContentNegotiation)
+    implementation(libs.ktor.clientContentNegotiation)
     implementation(libs.ktor.serializationGson)
     implementation(libs.ktor.client.cio)
 

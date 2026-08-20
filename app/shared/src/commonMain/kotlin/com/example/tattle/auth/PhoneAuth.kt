@@ -3,6 +3,7 @@ package com.example.tattle.auth
 expect suspend fun verifyPhoneNumber(
     phoneNumber: String,
     onCodeSent: (String) -> Unit,
+    onVerified: () -> Unit,
     onError: (String) -> Unit
 )
 

@@ -38,6 +38,15 @@ import io.github.jan.supabase.SupabaseClient
 import org.koin.compose.koinInject
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class OtpRequest(val phoneNumber: String)
+
+@Serializable
+data class OtpVerifyRequest(val phoneNumber: String, val otp: String)
+
+const val BASE_URL = "http://10.0.2.2:8081"
 
 @Composable
 fun SplashScreen(onGetStarted: () -> Unit) {
@@ -261,6 +270,10 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                                         isOtpSent = true
                                                         isLoading = false
                                                     },
+                                                    onVerified = {
+                                                        isLoading = false
+                                                        onLoginSuccess()
+                                                    },
                                                     onError = { msg ->
                                                         error = msg
                                                         isLoading = false
@@ -283,7 +296,7 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                     colors = ButtonDefaults.buttonColors(containerColor = if (isReady) Color(0xFF232323) else Color(0xFFE8E8E8)),
                                     shape = RoundedCornerShape(28.dp)
                                 ) {
-                                    Text(LocalStrings.get("send_code", language), fontWeight = FontWeight.Bold)
+                                    Text(LocalStrings.get("send_code", language), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 }
                             } else {
                                 Text(

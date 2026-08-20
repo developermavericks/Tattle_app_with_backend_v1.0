@@ -9,6 +9,9 @@ import java.util.concurrent.TimeUnit
 import android.app.Activity
 import com.google.android.gms.tasks.OnCompleteListener
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 import java.lang.ref.WeakReference
 
@@ -23,6 +26,7 @@ var currentActivity: Activity?
 actual suspend fun verifyPhoneNumber(
     phoneNumber: String,
     onCodeSent: (String) -> Unit,
+    onVerified: () -> Unit,
     onError: (String) -> Unit
 ) {
     val activity = currentActivity ?: run {
@@ -34,6 +38,14 @@ actual suspend fun verifyPhoneNumber(
     val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
             // Auto-verification or instant verification
+            CoroutineScope(Dispatchers.Main).launch {
+                try {
+                    auth.signInWithCredential(credential).await()
+                    onVerified()
+                } catch (e: Exception) {
+                    onError(e.message ?: "Instant verification failed")
+                }
+            }
         }
 
         override fun onVerificationFailed(e: FirebaseException) {
