@@ -16,6 +16,14 @@ dependencies {
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)
     implementation(libs.ktor.client.cio)
+    
+    implementation(libs.ktor.serverAuthJwt)
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.dao)
+    implementation(libs.exposed.jdbc)
+    implementation(libs.sqlite.jdbc)
+    implementation(libs.google.api.client)
+
     implementation("io.ktor:ktor-client-content-negotiation-jvm:3.5.0")
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:3.5.0")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:3.5.0")

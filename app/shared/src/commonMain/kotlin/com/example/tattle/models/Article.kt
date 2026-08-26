@@ -1,6 +1,36 @@
 package com.example.tattle.models
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+
+@Serializable
+data class SectorResponse(
+    @SerialName("sectors") val sectors: List<String>
+)
+
+@Serializable
+data class CuratedArticle(
+    @SerialName("id") val id: Int,
+    @SerialName("article_id") val articleId: String,
+    @SerialName("headline") val headline: String,
+    @SerialName("url") val url: String?,
+    @SerialName("source") val source: String?,
+    @SerialName("published_at") val publishedAt: String?,
+    @SerialName("sector") val sector: String,
+    @SerialName("rank") val rank: Int,
+    @SerialName("final_score") val finalScore: Double,
+    @SerialName("age_bracket") val ageBracket: String,
+    @SerialName("curated_date") val curatedDate: String,
+    @SerialName("is_duplicate") val isDuplicate: Boolean,
+    @SerialName("confidence_score") val confidenceScore: Double?,
+    
+    // --- Ollama-Enriched Fields ---
+    @SerialName("ollama_processed") val ollamaProcessed: Boolean,
+    @SerialName("summary") val summary: String?,
+    @SerialName("key_takeaways") val keyTakeaways: List<String>?,
+    @SerialName("why_it_matters") val whyItMatters: String?,
+    @SerialName("cleaned_content") val cleanedContent: String?
+)
 
 @Serializable
 data class Article(

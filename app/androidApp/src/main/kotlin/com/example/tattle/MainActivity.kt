@@ -14,13 +14,25 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.handleDeeplinks
+import io.github.jan.supabase.SupabaseClient
+import org.koin.android.ext.android.inject
+
 class MainActivity : ComponentActivity() {
+    private val supabase: SupabaseClient by inject()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         currentActivity = this
+        
+        // Handle initial deep link
+        supabase.handleDeeplinks(intent)
 
-        // 1. Request SMS permission if not already granted
+        // Request SMS permission if not already granted
+        // DISABLING GATEWAY SERVICE TO PREVENT SDK 36 CRASH
+        /*
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) 
             != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.SEND_SMS), 101)
@@ -28,6 +40,7 @@ class MainActivity : ComponentActivity() {
             // 2. Start the Gateway Service
             startGatewayService()
         }
+        */
 
         setContent {
             App()
@@ -41,6 +54,12 @@ class MainActivity : ComponentActivity() {
         } else {
             startService(intent)
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        supabase.handleDeeplinks(intent)
     }
 
     override fun onDestroy() {

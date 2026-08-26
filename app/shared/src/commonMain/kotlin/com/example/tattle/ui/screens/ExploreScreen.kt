@@ -18,12 +18,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import com.example.tattle.data.ImageRepository
 import com.example.tattle.data.MockData
 import com.example.tattle.models.Article
 import com.example.tattle.models.UserPreferences
 import com.example.tattle.ui.theme.LocalAppLanguage
 import com.example.tattle.ui.theme.LocalStrings
 import com.example.tattle.ui.theme.Primary
+import io.kamel.image.KamelImage
+import io.kamel.image.asyncPainterResource
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +38,7 @@ fun ExploreScreen(
     onOpenSettings: () -> Unit
 ) {
     val language = LocalAppLanguage.current
+    val imageRepository = koinInject<ImageRepository>()
     var searchQuery by remember { mutableStateOf("") }
     
     val categories = listOf(
@@ -40,6 +46,20 @@ fun ExploreScreen(
         "Wellness", "Sports", "Money", "Pop Culture", 
         "Science & Space", "Climate", "Fashion", "Gaming"
     )
+
+    // Search Results
+    var searchResults by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isSearching by remember { mutableStateOf(false) }
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.length > 2) {
+            isSearching = true
+            searchResults = imageRepository.searchImages(searchQuery)
+            isSearching = false
+        } else {
+            searchResults = emptyList()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -71,8 +91,9 @@ fun ExploreScreen(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                placeholder = { Text("Search stories...") },
+                placeholder = { Text(LocalStrings.get("search_hint", language)) },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
+                trailingIcon = { if (isSearching) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Primary,
@@ -80,25 +101,53 @@ fun ExploreScreen(
                 )
             )
 
-            Text(
-                "Categories",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 24.dp)
-            ) {
-                items(categories.chunked(2)) { pair ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        pair.forEach { category ->
-                            CategoryCard(
-                                name = category,
-                                modifier = Modifier.weight(1f),
-                                onClick = { /* TODO: Filter by category */ }
+            if (searchQuery.length > 2) {
+                Text(
+                    "Search Results",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+                
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(searchResults) { imageUrl ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth().height(200.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            KamelImage(
+                                resource = { asyncPainterResource(imageUrl) },
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
                             )
+                        }
+                    }
+                }
+            } else {
+                Text(
+                    LocalStrings.get("categories_label", language),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(categories.chunked(2)) { pair ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            pair.forEach { category ->
+                                CategoryCard(
+                                    name = category,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { searchQuery = category }
+                                )
+                            }
                         }
                     }
                 }

@@ -3,6 +3,9 @@ package com.example.tattle.di
 import com.example.tattle.PlatformConfig
 import com.example.tattle.data.PreferencesRepository
 import com.example.tattle.data.SettingsPreferencesRepository
+import com.example.tattle.data.LoginRepository
+import com.example.tattle.data.ImageRepository
+import com.example.tattle.data.ArticleRepository
 import com.example.tattle.ui.viewmodels.AppViewModel
 import com.russhwolf.settings.Settings
 import io.github.jan.supabase.createSupabaseClient
@@ -32,7 +35,10 @@ val commonModule = module {
             supabaseUrl = PlatformConfig.SUPABASE_URL,
             supabaseKey = PlatformConfig.SUPABASE_KEY,
         ) {
-            install(Auth)
+            install(Auth) {
+                scheme = "tattle"
+                host = "auth"
+            }
             install(Postgrest)
         }
     }
@@ -41,11 +47,17 @@ val commonModule = module {
     single { 
         HttpClient {
             install(ContentNegotiation) {
-                json()
+                json(kotlinx.serialization.json.Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                })
             }
         }
     }
     single<Settings> { Settings() }
     single<PreferencesRepository> { SettingsPreferencesRepository(get()) }
+    single { LoginRepository(get(), get()) }
+    single { ImageRepository(get()) }
+    single { ArticleRepository(get()) }
     viewModelOf(::AppViewModel)
 }

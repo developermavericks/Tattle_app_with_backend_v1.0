@@ -27,12 +27,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tattle.data.ArticleRepository
 import com.example.tattle.data.MockData
 import com.example.tattle.models.Article
 import com.example.tattle.models.UserPreferences
 import com.example.tattle.ui.components.ArticleCard
 import com.example.tattle.ui.components.SurveyCard
 import com.example.tattle.ui.theme.*
+import org.koin.compose.koinInject
+import kotlinx.coroutines.delay
 
 @Composable
 fun FeedScreen(
@@ -46,25 +49,65 @@ fun FeedScreen(
     isOffline: Boolean = false
 ) {
     val language = LocalAppLanguage.current
-    var activeTab by remember { mutableStateOf("for_you") }
+    val articleRepository = koinInject<ArticleRepository>()
+    
+    val userSectors = preferences.interests
+    var activeTab by remember { mutableStateOf(userSectors.firstOrNull() ?: "for_you") }
     var currentIndex by remember { mutableStateOf(0) }
     var showSurvey by remember { mutableStateOf(false) }
     var cardsSinceSurvey by remember { mutableStateOf(0) }
     var sessionCardsRead by remember { mutableStateOf(0) }
-    val sessionCap = 5 // Example cap
+    val sessionCap = 10 
 
-    val tabsList = listOf("for_you", "tech", "culture", "politics")
+    val tabsList = userSectors.ifEmpty { listOf("for_you") }
 
-    val filteredArticles = remember(activeTab, preferences.bookmarks, preferences.language) {
-        val baseList = MockData.articles.filter { it.language == preferences.language }
-        when (activeTab) {
-            "saved" -> baseList.filter { preferences.bookmarks.contains(it.id) }
-            "for_you" -> baseList
-            else -> baseList.filter { it.category.lowercase().contains(activeTab.lowercase()) }
+    // Fetch dynamic articles
+    var dynamicArticles by remember { mutableStateOf<List<Article>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(activeTab) {
+        if (activeTab != "saved" && activeTab != "for_you") {
+            isLoading = true
+            val articles = articleRepository.getArticlesBySector(activeTab)
+            dynamicArticles = articles
+            isLoading = false
+        } else {
+            dynamicArticles = emptyList()
+        }
+    }
+
+    val filteredArticles = remember(activeTab, preferences.bookmarks, dynamicArticles) {
+        if (dynamicArticles.isNotEmpty()) {
+            dynamicArticles
+        } else {
+            val baseList = MockData.articles.filter { it.language == preferences.language }
+            when (activeTab) {
+                "saved" -> baseList.filter { preferences.bookmarks.contains(it.id) }
+                "for_you" -> baseList
+                else -> baseList.filter { it.category.lowercase().contains(activeTab.lowercase()) }
+            }
         }
     }
 
     val currentArticle = filteredArticles.getOrNull(currentIndex)
+
+    // Real-time Polling for Ollama content
+    LaunchedEffect(currentArticle?.id) {
+        val article = currentArticle ?: return@LaunchedEffect
+        // If it's a placeholder, start polling
+        if (article.hook.contains("processed by AI")) {
+            while (true) {
+                delay(10000) // Ping every 10 seconds to be gentle
+                val updatedArticle = articleRepository.pollArticleUpdate(activeTab, article.id)
+                if (updatedArticle != null) {
+                    dynamicArticles = dynamicArticles.map {
+                        if (it.id == updatedArticle.id) updatedArticle else it
+                    }
+                    break
+                }
+            }
+        }
+    }
 
     Scaffold(
         containerColor = Color.White,
@@ -96,7 +139,9 @@ fun FeedScreen(
                 OfflineBanner(language = language, modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp))
             }
 
-            if (showSurvey) {
+            if (isLoading) {
+                CircularProgressIndicator(color = Primary)
+            } else if (showSurvey) {
                 SurveyCard(
                     survey = MockData.surveys[0],
                     onComplete = {
@@ -143,55 +188,37 @@ fun FeedScreen(
             } else if (currentArticle == null) {
                 EmptyState(activeTab, language) { activeTab = "for_you" }
             } else {
-                BoxWithConstraints(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp, vertical = 16.dp)
-                ) {
-                    val cardHeight = maxHeight
-                    val cardWidth = maxWidth
-
-                    // Back cards for visual stack
-                    if (currentIndex + 2 < filteredArticles.size) {
-                        Box(
-                            modifier = Modifier
-                                .size(cardWidth, cardHeight)
-                                .padding(top = 24.dp)
-                                .offset(y = 20.dp)
-                                .scale(0.9f)
-                                .clip(RoundedCornerShape(32.dp))
-                                .background(Color(0xFFF5F5F5))
-                                .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(32.dp))
-                        )
-                    }
-                    if (currentIndex + 1 < filteredArticles.size) {
-                        Box(
-                            modifier = Modifier
-                                .size(cardWidth, cardHeight)
-                                .padding(top = 12.dp)
-                                .offset(y = 10.dp)
-                                .scale(0.95f)
-                                .clip(RoundedCornerShape(32.dp))
-                                .background(Color(0xFFEEEEEE))
-                                .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(32.dp))
-                        )
-                    }
-
-                    key(currentArticle.id) {
+                AnimatedContent(
+                    targetState = currentArticle,
+                    transitionSpec = {
+                        if (targetState.id != (initialState?.id ?: "")) {
+                            (fadeIn(animationSpec = tween(400)) + scaleIn(initialScale = 0.92f, animationSpec = tween(400)))
+                                .togetherWith(fadeOut(animationSpec = tween(300)) + scaleOut(targetScale = 0.92f, animationSpec = tween(300)))
+                        } else {
+                            fadeIn(animationSpec = tween(400)).togetherWith(fadeOut(animationSpec = tween(400)))
+                        }
+                    },
+                    label = "ArticleTransition"
+                ) { targetArticle ->
+                    BoxWithConstraints(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp, vertical = 16.dp)
+                    ) {
                         ArticleCard(
-                            article = currentArticle,
-                            isBookmarked = preferences.bookmarks.contains(currentArticle.id),
+                            article = targetArticle,
+                            isBookmarked = preferences.bookmarks.contains(targetArticle.id),
                             onToggleBookmark = {
-                                val newBookmarks = if (preferences.bookmarks.contains(currentArticle.id)) {
-                                    preferences.bookmarks - currentArticle.id
+                                val newBookmarks = if (preferences.bookmarks.contains(targetArticle.id)) {
+                                    preferences.bookmarks - targetArticle.id
                                 } else {
-                                    preferences.bookmarks + currentArticle.id
+                                    preferences.bookmarks + targetArticle.id
                                 }
                                 onUpdatePreferences(preferences.copy(bookmarks = newBookmarks))
                             },
-                            onShare = { onShareArticle(currentArticle) },
-                            onOpenBrief = { onLaunchBrief(currentArticle) },
-                            onOpenFull = { onOpenArticle(currentArticle) },
+                            onShare = { onShareArticle(targetArticle) },
+                            onOpenBrief = { onLaunchBrief(targetArticle) },
+                            onOpenFull = { onOpenArticle(targetArticle) },
                             onSwipeLeft = {
                                 proceedNext(
                                     currentIndex,
@@ -204,8 +231,8 @@ fun FeedScreen(
                                 )
                             },
                             onSwipeRight = {
-                                val history = if (!preferences.readHistory.contains(currentArticle.id)) {
-                                    preferences.readHistory + currentArticle.id
+                                val history = if (!preferences.readHistory.contains(targetArticle.id)) {
+                                    preferences.readHistory + targetArticle.id
                                 } else {
                                     preferences.readHistory
                                 }
@@ -231,10 +258,18 @@ fun FeedScreen(
                                 }
                             },
                             onReaction = { emoji ->
-                                val newReactions = preferences.reactions + (currentArticle.id to emoji)
+                                val newReactions = preferences.reactions + (targetArticle.id to emoji)
                                 onUpdatePreferences(preferences.copy(reactions = newReactions))
                             },
-                            currentReaction = preferences.reactions[currentArticle.id],
+                            onImageLoaded = { url ->
+                                // Update the article in the list if it's dynamic
+                                if (dynamicArticles.any { it.id == targetArticle.id }) {
+                                    dynamicArticles = dynamicArticles.map {
+                                        if (it.id == targetArticle.id) it.copy(imageUrl = url) else it
+                                    }
+                                }
+                            },
+                            currentReaction = preferences.reactions[targetArticle.id],
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -319,6 +354,12 @@ fun TabsRow(tabs: List<String>, activeTab: String, language: String, onTabSelect
     ) {
         items(tabs) { tabKey ->
             val isActive = tabKey == activeTab
+            val displayName = try {
+                LocalStrings.get(tabKey, language)
+            } catch (e: Exception) {
+                tabKey.replaceFirstChar { it.uppercase() }
+            }
+            
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
@@ -327,7 +368,7 @@ fun TabsRow(tabs: List<String>, activeTab: String, language: String, onTabSelect
                     .padding(horizontal = 20.dp, vertical = 10.dp)
             ) {
                 Text(
-                    text = LocalStrings.get(tabKey, language),
+                    text = displayName,
                     color = if (isActive) Color.White else Color.Black,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold

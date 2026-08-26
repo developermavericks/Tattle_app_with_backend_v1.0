@@ -116,9 +116,9 @@ fun BriefView(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Brief Summary
+                // Summary (Ollama Enriched)
                 Text(
-                    text = article.brief,
+                    text = article.brief, // Mapped to 'summary' in Repository
                     color = Color.Black,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
@@ -127,7 +127,7 @@ fun BriefView(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Takeaways
+                // Key Takeaways (Ollama Enriched)
                 Text(
                     text = LocalStrings.get("core_takeaways", language),
                     color = Primary,

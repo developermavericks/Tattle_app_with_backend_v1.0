@@ -1,55 +1,64 @@
 package com.example.tattle
 
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
-import io.ktor.client.request.*
-import io.ktor.http.*
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
+import com.google.api.client.http.javanet.NetHttpTransport
+import com.google.api.client.json.gson.GsonFactory
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.http.*
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.SchemaUtils
 import kotlinx.serialization.Serializable
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.random.Random
 
-@Serializable
-data class User(val email: String, val password: String, val phoneNumber: String? = null)
-
-@Serializable
-data class AuthResponse(val success: Boolean, val message: String)
-
-@Serializable
-data class OtpRequest(val phoneNumber: String)
-
-@Serializable
-data class OtpVerifyRequest(val phoneNumber: String, val otp: String)
-
-@Serializable
-data class GatewayRegisterRequest(val ip: String, val port: Int)
-
-@Serializable
-data class SmsRequest(val phone: String, val message: String)
-
-// Global State
-val users = mutableListOf(
-    User("developerteam@themavericksindia.com", "12345")
-)
-
-val otpStore = ConcurrentHashMap<String, String>() // phoneNumber -> otp
-var gatewayAddress: String? = null
-
-val client = HttpClient(CIO) {
-    install(ClientContentNegotiation) {
-        json()
-    }
+// --- Database Schema ---
+object Users : IntIdTable() {
+    val email = varchar("email", 255).uniqueIndex().nullable()
+    val phoneNumber = varchar("phone_number", 20).uniqueIndex().nullable()
+    val googleId = varchar("google_id", 255).uniqueIndex().nullable()
+    val name = varchar("name", 255).nullable()
 }
 
+@Serializable
+data class AuthRequest(val token: String? = null, val email: String? = null, val phone: String? = null, val otp: String? = null)
+
+@Serializable
+data class AuthResponse(val success: Boolean, val token: String? = null, val message: String? = null)
+
+@Serializable
+data class SimpleResponse(val success: Boolean, val message: String)
+
+// --- Configuration ---
+object AuthConfig {
+    const val SECRET = "TATTLE_LOCAL_SECRET_KEY_2026"
+    const val ISSUER = "com.example.tattle"
+    const val AUDIENCE = "tattle-users"
+    const val GOOGLE_WEB_CLIENT_ID = "610417006948-m97qce1p5ot524tr542m1ijf19n93uou.apps.googleusercontent.com"
+}
+
+val otpStore = ConcurrentHashMap<String, String>()
+
 fun main() {
+    // Initialize Local Database
+    Database.connect("jdbc:sqlite:./tattle.db", "org.sqlite.JDBC")
+    transaction {
+        SchemaUtils.create(Users)
+    }
+
     embeddedServer(Netty, port = 8081, host = "0.0.0.0", module = Application::module)
         .start(wait = true)
 }
@@ -59,80 +68,175 @@ fun Application.module() {
         json()
     }
 
-    routing {
-        get("/") {
-            call.respondText("Tattle Backend Live. Gateway: $gatewayAddress")
-        }
-
-        // --- Gateway Discovery ---
-        post("/api/gateway/register") {
-            val req = call.receive<GatewayRegisterRequest>()
-            gatewayAddress = "http://${req.ip}:${req.port}"
-            println("Gateway registered at: $gatewayAddress")
-            call.respond(mapOf("status" to "registered"))
-        }
-
-        // --- OTP Logic ---
-        post("/api/otp/generate") {
-            val req = call.receive<OtpRequest>()
-            val generatedOtp = (100000..999999).random().toString()
-            otpStore[req.phoneNumber] = generatedOtp
-            
-            println("Generated OTP for ${req.phoneNumber}: $generatedOtp")
-
-            val currentGateway = gatewayAddress
-            if (currentGateway == null) {
-                call.respond(HttpStatusCode.ServiceUnavailable, mapOf("error" to "SMS Gateway not registered"))
-                return@post
-            }
-
-            try {
-                val response = client.post("$currentGateway/send-sms") {
-                    contentType(ContentType.Application.Json)
-                    header("Authorization", "Bearer TATTLE_CLEO_CM_MAVS")
-                    setBody(SmsRequest(req.phoneNumber, "Your Tattle OTP is: $generatedOtp"))
-                }
-                
-                if (response.status == HttpStatusCode.OK) {
-                    call.respond(mapOf("status" to "sent"))
-                } else {
-                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Gateway returned ${response.status}"))
-                }
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to reach gateway: ${e.message}"))
-            }
-        }
-
-        post("/api/otp/verify") {
-            val req = call.receive<OtpVerifyRequest>()
-            val storedOtp = otpStore[req.phoneNumber]
-            
-            if (storedOtp == req.otp) {
-                otpStore.remove(req.phoneNumber)
-                call.respond(AuthResponse(true, "OTP Verified"))
-            } else {
-                call.respond(AuthResponse(false, "Invalid OTP"))
-            }
-        }
-
-        post("/login") {
-            val credentials = call.receive<User>()
-            val user = users.find { it.email == credentials.email && it.password == credentials.password }
-            if (user != null) {
-                call.respond(AuthResponse(true, "Login successful"))
-            } else {
-                call.respond(AuthResponse(false, "Invalid credentials"))
-            }
-        }
-
-        post("/register") {
-            val newUser = call.receive<User>()
-            if (users.any { it.email == newUser.email }) {
-                call.respond(AuthResponse(false, "User already exists"))
-            } else {
-                users.add(newUser)
-                call.respond(AuthResponse(true, "Registration successful"))
+    install(Authentication) {
+        jwt("auth-jwt") {
+            realm = "Tattle Server"
+            verifier(
+                JWT.require(Algorithm.HMAC256(AuthConfig.SECRET))
+                    .withAudience(AuthConfig.AUDIENCE)
+                    .withIssuer(AuthConfig.ISSUER)
+                    .build()
+            )
+            validate { credential ->
+                if (credential.payload.getClaim("userId").asInt() != null) {
+                    JWTPrincipal(credential.payload)
+                } else null
             }
         }
     }
+
+    routing {
+        get("/") {
+            call.respondText("Tattle Local Backend is running.")
+        }
+
+        // --- Google Sign In ---
+        post("/api/auth/google") {
+            val req = call.receive<AuthRequest>()
+            val idTokenString = req.token ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing token")
+            
+            val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory())
+                .setAudience(listOf(AuthConfig.GOOGLE_WEB_CLIENT_ID))
+                .build()
+
+            val idToken = try {
+                verifier.verify(idTokenString)
+            } catch (e: Exception) {
+                null
+            }
+
+            if (idToken != null) {
+                val payload = idToken.payload
+                val userId = payload.subject
+                val email = payload.email
+                val name = payload.get("name") as String?
+
+                val dbId = transaction {
+                    val existing = Users.selectAll().where { Users.googleId eq userId }.singleOrNull()
+                    if (existing != null) {
+                        existing[Users.id].value
+                    } else {
+                        Users.insertAndGetId {
+                            it[googleId] = userId
+                            it[Users.email] = email
+                            it[Users.name] = name
+                        }.value
+                    }
+                }
+                
+                val token = generateToken(dbId)
+                call.respond(AuthResponse(true, token))
+            } else {
+                call.respond(HttpStatusCode.Unauthorized, AuthResponse(false, message = "Invalid Google Token"))
+            }
+        }
+
+        // --- Phone Auth (Simulation) ---
+        post("/api/auth/otp/generate") {
+            val req = call.receive<AuthRequest>()
+            val phone = req.phone ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing phone")
+            val otp = (100000..999999).random().toString()
+            otpStore[phone] = otp
+            
+            println("------------------------------------")
+            println("SIMULATED SMS to $phone: Your Tattle OTP is $otp")
+            println("------------------------------------")
+            
+            call.respond(SimpleResponse(true, "OTP generated (Check server console)"))
+        }
+
+        post("/api/auth/otp/verify") {
+            val req = call.receive<AuthRequest>()
+            val phone = req.phone ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing phone")
+            val otp = req.otp ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing otp")
+            
+            if (otpStore[phone] == otp) {
+                otpStore.remove(phone)
+                val dbId = transaction {
+                    val existing = Users.selectAll().where { Users.phoneNumber eq phone }.singleOrNull()
+                    if (existing != null) {
+                        existing[Users.id].value
+                    } else {
+                        Users.insertAndGetId {
+                            it[phoneNumber] = phone
+                        }.value
+                    }
+                }
+                val token = generateToken(dbId)
+                call.respond(AuthResponse(true, token))
+            } else {
+                call.respond(HttpStatusCode.Unauthorized, AuthResponse(false, message = "Invalid OTP"))
+            }
+        }
+
+        // --- Email Auth (Simulation) ---
+        post("/api/auth/email/generate") {
+            val req = call.receive<AuthRequest>()
+            val email = req.email ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing email")
+            val otp = (100000..999999).random().toString()
+            otpStore[email] = otp
+            
+            println("------------------------------------")
+            println("SIMULATED EMAIL to $email: Your Tattle Login Code is $otp")
+            println("------------------------------------")
+            
+            call.respond(SimpleResponse(true, "OTP generated (Check server console)"))
+        }
+
+        post("/api/auth/email/verify") {
+            val req = call.receive<AuthRequest>()
+            val email = req.email ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing email")
+            val otp = req.otp ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing otp")
+            
+            if (otpStore[email] == otp) {
+                otpStore.remove(email)
+                val dbId = transaction {
+                    val existing = Users.selectAll().where { Users.email eq email }.singleOrNull()
+                    if (existing != null) {
+                        existing[Users.id].value
+                    } else {
+                        Users.insertAndGetId {
+                            it[Users.email] = email
+                        }.value
+                    }
+                }
+                val token = generateToken(dbId)
+                call.respond(AuthResponse(true, token))
+            } else {
+                call.respond(HttpStatusCode.Unauthorized, AuthResponse(false, message = "Invalid OTP"))
+            }
+        }
+
+        authenticate("auth-jwt") {
+            get("/api/user/profile") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+                
+                val userProfile = transaction {
+                    Users.selectAll().where { Users.id eq userId }.map {
+                        mapOf(
+                            "email" to it[Users.email],
+                            "phone" to it[Users.phoneNumber],
+                            "name" to it[Users.name]
+                        )
+                    }.singleOrNull()
+                }
+                
+                if (userProfile != null) {
+                    call.respond(userProfile)
+                } else {
+                    call.respond(HttpStatusCode.NotFound)
+                }
+            }
+        }
+    }
+}
+
+fun generateToken(userId: Int): String {
+    return JWT.create()
+        .withAudience(AuthConfig.AUDIENCE)
+        .withIssuer(AuthConfig.ISSUER)
+        .withClaim("userId", userId)
+        .withExpiresAt(Date(System.currentTimeMillis() + 604_800_000)) // 7 days
+        .sign(Algorithm.HMAC256(AuthConfig.SECRET))
 }

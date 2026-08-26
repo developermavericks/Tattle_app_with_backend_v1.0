@@ -27,11 +27,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tattle.data.ImageRepository
 import com.example.tattle.models.Article
 import com.example.tattle.ui.theme.*
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import kotlin.math.abs
 
 @Composable
@@ -45,10 +47,38 @@ fun ArticleCard(
     onSwipeLeft: () -> Unit,
     onSwipeRight: () -> Unit,
     onReaction: (String) -> Unit,
+    onImageLoaded: (String) -> Unit,
     currentReaction: String?,
     modifier: Modifier = Modifier
 ) {
     val language = LocalAppLanguage.current
+    val imageRepository = koinInject<ImageRepository>()
+    var pixabayImageUrl by remember(article.id) { mutableStateOf<String?>(null) }
+    
+    LaunchedEffect(article.id) {
+        if (article.imageUrl.isNotEmpty() && !article.imageUrl.startsWith("http")) {
+            // Already have a local/pixabay image
+        } else if (article.imageUrl.isEmpty()) {
+            val headlineKeywords = article.headline
+                .split(" ")
+                .filter { it.length > 3 }
+                .take(2)
+                .joinToString(" ")
+            
+            val primaryQuery = "${article.category} $headlineKeywords"
+            var url = imageRepository.searchImage(primaryQuery)
+            
+            if (url == null) {
+                url = imageRepository.searchImage(article.category)
+            }
+            
+            if (url != null) {
+                pixabayImageUrl = url
+                onImageLoaded(url)
+            }
+        }
+    }
+
     var showReactions by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val offsetX = remember { Animatable(0f) }
@@ -139,8 +169,10 @@ fun ArticleCard(
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color.LightGray)
                 ) {
+                    val finalImageUrl = pixabayImageUrl ?: article.imageUrl
+                    
                     KamelImage(
-                        resource = { asyncPainterResource(article.imageUrl) },
+                        resource = { asyncPainterResource(finalImageUrl) },
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
@@ -199,8 +231,9 @@ fun ArticleCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(8.dp))
+                    // Bind Summary here
                     Text(
-                        text = article.hook,
+                        text = article.hook, // Mapped to 'summary' in Repository
                         color = Color.DarkGray,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,

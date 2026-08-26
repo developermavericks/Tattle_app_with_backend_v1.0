@@ -17,6 +17,11 @@ dependencies {
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)
+    
+    // Credential Manager
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 
     // SMS Gateway dependencies
     implementation(libs.ktor.serverCore)
@@ -28,6 +33,8 @@ dependencies {
 
     implementation(platform(libs.firebase.android.bom))
     implementation(libs.firebase.android.auth)
+    implementation(libs.firebase.appcheck.playintegrity)
+    implementation(libs.firebase.appcheck.debug)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)

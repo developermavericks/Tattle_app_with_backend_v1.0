@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -29,7 +30,8 @@ fun SettingsScreen(
     preferences: UserPreferences,
     onUpdatePreferences: (UserPreferences) -> Unit,
     onOpenArticle: (Article) -> Unit,
-    onPurgeData: () -> Unit
+    onPurgeData: () -> Unit,
+    onBack: () -> Unit
 ) {
     val scrollState = rememberScrollState()
     var showLanguageDialog by remember { mutableStateOf(false) }
@@ -44,9 +46,24 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(32.dp)
     ) {
         // Header
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(text = LocalStrings.get("settings", language), color = Color.Black, fontSize = 40.sp, fontWeight = FontWeight.Bold)
-            Text(text = LocalStrings.get("configure_experience", language), color = Color.Gray, fontSize = 16.sp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(Color(0xFFF5F5F5), RoundedCornerShape(12.dp))
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
+            }
+            
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(text = LocalStrings.get("settings", language), color = Color.Black, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                Text(text = LocalStrings.get("configure_experience", language), color = Color.Gray, fontSize = 14.sp)
+            }
         }
 
         // Notifications
@@ -138,7 +155,7 @@ fun SettingsScreen(
         // Read History
         val historyArticles = MockData.articles.filter { preferences.readHistory.contains(it.id) }
         if (historyArticles.isNotEmpty()) {
-            SettingsSection(title = "READ HISTORY") {
+            SettingsSection(title = LocalStrings.get("read_history_label", language)) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
@@ -164,7 +181,7 @@ fun SettingsScreen(
         // Saved Articles
         val savedArticles = MockData.articles.filter { preferences.bookmarks.contains(it.id) }
         if (savedArticles.isNotEmpty()) {
-            SettingsSection(title = "SAVED ARTICLES") {
+            SettingsSection(title = LocalStrings.get("saved_articles_label", language)) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
@@ -204,7 +221,7 @@ fun SettingsScreen(
             title = { Text(LocalStrings.get("select_language", language), color = Color.Black) },
             text = {
                 Column {
-                    listOf("English", "Spanish", "French", "German").forEach { lang ->
+                    listOf("English", "Hindi").forEach { lang ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()

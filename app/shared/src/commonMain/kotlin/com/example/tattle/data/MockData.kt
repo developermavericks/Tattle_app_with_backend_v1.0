@@ -38,73 +38,27 @@ The incident is a stark reminder that as we accelerate into direct-to-brain inte
             language = "English"
         ),
         Article(
-            id = "es-1",
-            category = "Tecnología",
-            readTime = "LECTURA DE 30 seg",
-            headline = "Éxodo de neón: la red de la ciudad 7 se enfrenta a un apagón masivo",
-            hook = "Los técnicos informan un fallo de energía localizado en el ciberdistrito, que afecta a más de 2 millones de residentes.",
-            brief = "Un fallo de energía masivo ha sumergido a City Grid 7 en la oscuridad absoluta.",
+            id = "hi-1",
+            category = "टेक और AI",
+            readTime = "30 सेकंड का पाठ",
+            headline = "नियॉन एक्सोडस: सिटी ग्रिड 7 में भारी सिस्टम ब्लैकआउट",
+            hook = "तकनीशियनों ने साइबर-डिस्ट्रिक्ट में स्थानीय बिजली विफलता की सूचना दी है, जिससे 20 लाख से अधिक निवासी प्रभावित हुए हैं। ग्रिड अधिकारियों को एक समन्वित डिजिटल सेंधमारी का संदेह है।",
+            brief = "एक भारी बिजली विफलता ने सिटी ग्रिड 7 को पूर्ण अंधेरे में धकेल दिया है। तकनीशियन प्राथमिक सबस्टेशन के फर्मवेयर में पाए गए एक दुष्ट वर्म को अलग करने की कोशिश कर रहे हैं। अधिकारी निवासियों से संचार के लिए ऑफ-ग्रिड स्थानीयकृत मेश सेल पर भरोसा करने का आग्रह कर रहे हैं।",
             bullets = listOf(
-                "Más de 2 millones de residentes están en la oscuridad.",
-                "Las autoridades sospechan de una brecha digital coordinada.",
-                "Se insta a los ciudadanos a utilizar redes mesh locales."
+                "20 लाख से अधिक निवासी पूरी तरह अंधेरे में हैं, सभी पारगमन और वाणिज्य लाइनें ऑफलाइन हैं।",
+                "साइबर-सुरक्षा टास्क फोर्स ने पुनर्नवीनीकरण हार्डवेयर तत्वों का उपयोग करके एक समन्वित डिजिटल सेंधमारी को चिह्नित किया है।",
+                "आपातकालीन लाइनों के बंद होने के कारण ऑफ-ग्रिड स्थानीयकृत मेश नेटवर्क पर रिकॉर्ड-उच्च ट्रैफ़िक देखा जा रहा है।"
             ),
-            whyItMatters = "Esto no es un simple fallo; es una demostración de guerra de redes moderna.",
-            fullText = "Texto completo en español aquí...",
-            publisher = "Tattle Reports",
-            publishedAt = "hace 2h",
-            imageUrl = "https://picsum.photos/seed/tattle_es/800/1000",
+            whyItMatters = "यह केवल बुनियादी ढांचे की विफलता नहीं है; यह आधुनिक ग्रिड युद्ध का एक जीवंत प्रदर्शन है। यदि स्थानीयकृत स्मार्ट सबस्टेशन नियंत्रण पुनर्नवीनीकरण हार्डवेयर कारनामों के प्रति संवेदनशील हैं, तो प्रत्येक उच्च-घनत्व वाला महानगरीय क्षेत्र सक्रिय रूप से एक टिक-टिक करती घड़ी पर बैठा है।",
+            fullText = "हिंदी में पूरा लेख यहाँ...",
+            publisher = "टैटल रिपोर्ट्स",
+            publishedAt = "2 घंटे पहले",
+            imageUrl = "https://picsum.photos/seed/tattle_hi/800/1000",
             likes = 1100,
             commentsCount = 200,
             isBreaking = true,
             views = 3000,
-            language = "Spanish"
-        ),
-        Article(
-            id = "fr-1",
-            category = "Technologie",
-            readTime = "30s de lecture",
-            headline = "Exode de Néon : La Grille de la Ville 7 Fait Face à une Panne Massive",
-            hook = "Les techniciens signalent une panne de courant localisée dans le cyber-district, affectant plus de 2 millions de résidents.",
-            brief = "Une panne de courant massive a plongé la Grille 7 dans l'obscurité totale.",
-            bullets = listOf(
-                "Plus de 2 millions de résidents sont dans le noir.",
-                "Les autorités soupçonnent une faille numérique coordonnée.",
-                "On demande aux résidents d'utiliser les réseaux locaux."
-            ),
-            whyItMatters = "Ce n'est pas une simple panne ; c'est une démonstration de guerre moderne des réseaux.",
-            fullText = "Texte complet en français ici...",
-            publisher = "Tattle Reports",
-            publishedAt = "Il y a 2h",
-            imageUrl = "https://picsum.photos/seed/tattle_fr/800/1000",
-            likes = 950,
-            commentsCount = 150,
-            isBreaking = true,
-            views = 2800,
-            language = "French"
-        ),
-        Article(
-            id = "de-1",
-            category = "Technologie",
-            readTime = "30s Lesezeit",
-            headline = "Neon Exodus: Stadtgitter 7 Erleidet Massiven Systemausfall",
-            hook = "Techniker berichten von einem lokalisierten Stromausfall im Cyber-Distrikt, der über 2 Millionen Einwohner betrifft.",
-            brief = "Ein massiver Stromausfall hat das Stadtgitter 7 in absolute Dunkelheit gestürzt.",
-            bullets = listOf(
-                "Über 2 Millionen Einwohner sind ohne Strom.",
-                "Behörden vermuten eine koordinierte digitale Sicherheitslücke.",
-                "Bürger sollen lokale Mesh-Netzwerke nutzen."
-            ),
-            whyItMatters = "Dies ist kein einfacher Infrastrukturausfall; es ist eine Demonstration moderner Netzwerkkriegsführung.",
-            fullText = "Vollständiger Text auf Deutsch hier...",
-            publisher = "Tattle Reports",
-            publishedAt = "vor 2 Std.",
-            imageUrl = "https://picsum.photos/seed/tattle_de/800/1000",
-            likes = 800,
-            commentsCount = 120,
-            isBreaking = true,
-            views = 2500,
-            language = "German"
+            language = "Hindi"
         ),
         Article(
             id = "2",
@@ -128,6 +82,29 @@ The incident is a stark reminder that as we accelerate into direct-to-brain inte
             isBreaking = false,
             views = 3200,
             language = "English"
+        ),
+        Article(
+            id = "hi-2",
+            category = "भविष्य की तकनीक",
+            readTime = "6 मिनट का पाठ",
+            headline = "शहरी ग्रिडों में न्यूरल-मेश नेटवर्क का मौन उदय",
+            hook = "जबकि टेलीकॉम दिग्गज महंगे प्रीमियम लाइसेंस बेच रहे हैं, हैकर्स का एक जमीनी समुदाय सस्ते रेडियो नोड्स का उपयोग करके पूरी तरह से मुफ्त, संप्रभु इंटरनेट बुन रहा है।",
+            brief = "विकेंद्रीकृत मेश नेटवर्क प्रमुख वैश्विक महानगरों में चुपचाप फैल रहे हैं, जो कॉर्पोरेट-निगरानी वाले इंटरनेट मार्गों का एक सुरक्षित विकल्प प्रदान करते हैं।",
+            bullets = listOf(
+                "सौर नोड्स एक स्व-चिकित्सा, पीयर-टू-पीयर डेटा वेब बनाते हैं।",
+                "डेटा कई मार्गों में विभाजित है, जिससे निगरानी असंभव हो जाती है।",
+                "टोक्यो और बर्लिन में 45,000 से अधिक सक्रिय डिवाइस ऑनलाइन हैं।"
+            ),
+            whyItMatters = "न्यूरल-मेश नेटवर्क संप्रभुता के तकनीकी सुधार का प्रतिनिधित्व करते हैं।",
+            fullText = "हिंदी में पूरा लेख यहाँ...",
+            publisher = "टैटल रिपोर्ट्स",
+            publishedAt = "3 घंटे पहले",
+            imageUrl = "https://picsum.photos/seed/tattle_hi2/800/1000",
+            likes = 1400,
+            commentsCount = 250,
+            isBreaking = false,
+            views = 2800,
+            language = "Hindi"
         ),
         Article(
             id = "3",

@@ -122,6 +122,15 @@ fun FullView(
                 )
             }
 
+            // Body Text (Ollama Cleaned Content)
+            Text(
+                text = article.fullText, // Mapped to 'cleaned_content' in Repository
+                fontSize = 16.sp,
+                lineHeight = 26.sp,
+                color = Color.DarkGray,
+                textAlign = TextAlign.Justify
+            )
+
             // Core Takeaways Section (Screen 7)
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(

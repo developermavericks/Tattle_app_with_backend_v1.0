@@ -71,6 +71,10 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.firebase.android.auth)
+            
+            implementation(libs.androidx.credentials)
+            implementation(libs.androidx.credentials.play.services.auth)
+            implementation(libs.googleid)
         }
         commonMain.dependencies {
             api(projects.core)
@@ -87,14 +91,15 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kamel)
             implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.clientContentNegotiation)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.navigation.compose)
             implementation(libs.multiplatform.settings.no.arg)
             
-            implementation(libs.supabase.auth.kt)
-            implementation(libs.supabase.postgrest)
+            api(libs.supabase.auth.kt)
+            api(libs.supabase.postgrest)
             implementation(libs.firebase.auth)
         }
         commonTest.dependencies {

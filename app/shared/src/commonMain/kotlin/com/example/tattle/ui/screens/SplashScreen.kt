@@ -2,6 +2,7 @@ package com.example.tattle.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,19 +17,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tattle.auth.signInWithCode
 import com.example.tattle.auth.verifyPhoneNumber
+import com.example.tattle.auth.signInWithGoogle
+import com.example.tattle.data.LoginRepository
 import com.example.tattle.ui.theme.LocalAppLanguage
 import com.example.tattle.ui.theme.LocalStrings
 import com.example.tattle.ui.theme.Primary
@@ -39,15 +45,8 @@ import io.github.jan.supabase.SupabaseClient
 import org.koin.compose.koinInject
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class OtpRequest(val phoneNumber: String)
-
-@Serializable
-data class OtpVerifyRequest(val phoneNumber: String, val otp: String)
-
-const val BASE_URL = "http://10.0.2.2:8081"
+import org.jetbrains.compose.resources.painterResource
+import tattle.app.shared.generated.resources.*
 
 @Composable
 fun SplashScreen(onGetStarted: () -> Unit) {
@@ -59,57 +58,75 @@ fun SplashScreen(onGetStarted: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Primary),
+            .background(Color.White),
         contentAlignment = Alignment.Center
     ) {
+        // World Map Background
+        Image(
+            painter = painterResource(Res.drawable.world_map),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.FillWidth,
+            alpha = 0.7f
+        )
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(24.dp)
+            modifier = Modifier.fillMaxSize().padding(24.dp)
         ) {
-            Text(
-                text = LocalStrings.get("app_name", language),
-                color = Color.White,
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Bold
+            Spacer(modifier = Modifier.weight(0.8f))
+            
+            Image(
+                painter = painterResource(Res.drawable.logo),
+                contentDescription = "Tattle Logo",
+                modifier = Modifier.fillMaxWidth(0.6f),
+                contentScale = ContentScale.Fit
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             Text(
                 text = LocalStrings.get("your_neighborhood", language),
-                color = Color.White.copy(alpha = 0.8f),
-                fontSize = 16.sp
+                color = Color.DarkGray,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium
             )
             
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.weight(1.2f))
             
-            LoginButton(
-                text = LocalStrings.get("continue_google", language),
-                icon = { Icon(Icons.Default.Email, null, tint = Color.White, modifier = Modifier.padding(end = 8.dp)) },
-                onClick = { showGoogleLogin = true }
-            )
-            
-            LoginButton(
-                text = LocalStrings.get("continue_phone", language),
-                icon = { Icon(Icons.Default.Phone, null, tint = Color.White, modifier = Modifier.padding(end = 8.dp)) },
-                onClick = { showPhoneLogin = true }
-            )
-            
-            LoginButton(
-                text = LocalStrings.get("continue_email", language),
-                icon = null,
-                onClick = { showEmailLogin = true }
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                LoginButton(
+                    text = LocalStrings.get("continue_google", language),
+                    icon = { Icon(Icons.Default.Email, null, tint = Color.White, modifier = Modifier.padding(end = 8.dp)) },
+                    onClick = { showGoogleLogin = true }
+                )
+                
+                LoginButton(
+                    text = LocalStrings.get("continue_phone", language),
+                    icon = { Icon(Icons.Default.Phone, null, tint = Color.White, modifier = Modifier.padding(end = 8.dp)) },
+                    onClick = { showPhoneLogin = true }
+                )
+                
+                LoginButton(
+                    text = LocalStrings.get("continue_email", language),
+                    icon = null,
+                    onClick = { showEmailLogin = true }
+                )
+            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "Trouble signing in?",
-                color = Color.White.copy(alpha = 0.6f),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.clickable { /* TODO: Open support */ }
+                text = LocalStrings.get("terms_service", language),
+                color = Color.LightGray,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center
             )
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
 
         if (showGoogleLogin) {
@@ -147,13 +164,13 @@ fun SplashScreen(onGetStarted: () -> Unit) {
 @Composable
 fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
     val language = LocalAppLanguage.current
+    val loginRepository = koinInject<LoginRepository>()
     var phoneNumber by remember { mutableStateOf("") }
     var countryCode by remember { mutableStateOf("+91") }
     var otp by remember { mutableStateOf("") }
     var isOtpSent by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var verificationId by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     val infiniteTransition = rememberInfiniteTransition(label = "bounce")
@@ -237,7 +254,7 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                                 error = null
                                             }
                                         },
-                                        label = { Text("10-digit Number") },
+                                        label = { Text(LocalStrings.get("phone_hint", language)) },
                                         modifier = Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(12.dp),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -274,22 +291,14 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                         if (isReady) {
                                             isLoading = true
                                             scope.launch {
-                                                verifyPhoneNumber(
-                                                    phoneNumber = "$countryCode$phoneNumber",
-                                                    onCodeSent = { id ->
-                                                        verificationId = id
-                                                        isOtpSent = true
-                                                        isLoading = false
-                                                    },
-                                                    onVerified = {
-                                                        isLoading = false
-                                                        onLoginSuccess()
-                                                    },
-                                                    onError = { msg ->
-                                                        error = msg
-                                                        isLoading = false
-                                                    }
-                                                )
+                                                val result = loginRepository.generateOtp("$countryCode$phoneNumber")
+                                                if (result.isSuccess) {
+                                                    isOtpSent = true
+                                                    isLoading = false
+                                                } else {
+                                                    error = result.exceptionOrNull()?.message ?: "Failed to send OTP"
+                                                    isLoading = false
+                                                }
                                             }
                                         } else {
                                             error = "Please enter exactly 10 digits"
@@ -383,21 +392,17 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                 val isOtpReady = otp.length == 6
                                 Button(
                                     onClick = { 
-                                        if (isOtpReady && (verificationId != null)) {
+                                        if (isOtpReady) {
                                             isLoading = true
                                             scope.launch {
-                                                signInWithCode(
-                                                    verificationId = verificationId!!,
-                                                    code = otp,
-                                                    onSuccess = {
-                                                        isLoading = false
-                                                        onLoginSuccess()
-                                                    },
-                                                    onError = { msg ->
-                                                        error = msg
-                                                        isLoading = false
-                                                    }
-                                                )
+                                                val result = loginRepository.verifyOtp("$countryCode$phoneNumber", otp)
+                                                if (result.isSuccess) {
+                                                    isLoading = false
+                                                    onLoginSuccess()
+                                                } else {
+                                                    error = result.exceptionOrNull()?.message ?: "Invalid OTP"
+                                                    isLoading = false
+                                                }
                                             }
                                         }
                                     },
@@ -435,7 +440,7 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
 
 @Composable
 fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
-    val supabase = koinInject<SupabaseClient>()
+    val loginRepository = koinInject<LoginRepository>()
     val language = LocalAppLanguage.current
     var email by remember { mutableStateOf("") }
     var otp by remember { mutableStateOf("") }
@@ -504,16 +509,13 @@ fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                     if (isReady) {
                                         isLoading = true
                                         scope.launch {
-                                            try {
-                                                supabase.auth.signInWith(OTP) {
-                                                    this.email = email
-                                                }
+                                            val result = loginRepository.generateEmailOtp(email)
+                                            if (result.isSuccess) {
                                                 isOtpSent = true
-                                            } catch (e: Exception) {
-                                                error = "Failed to send code: ${e.message}"
-                                            } finally {
-                                                isLoading = false
+                                            } else {
+                                                error = result.exceptionOrNull()?.message ?: "Failed to send code"
                                             }
+                                            isLoading = false
                                         }
                                     } else {
                                         error = "Please enter a valid email"
@@ -574,18 +576,13 @@ fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                     if (isOtpReady) {
                                         isLoading = true
                                         scope.launch {
-                                            try {
-                                                supabase.auth.verifyEmailOtp(
-                                                    type = OtpType.Email.EMAIL,
-                                                    email = email,
-                                                    token = otp
-                                                )
+                                            val result = loginRepository.verifyEmailOtp(email, otp)
+                                            if (result.isSuccess) {
                                                 onLoginSuccess()
-                                            } catch (e: Exception) {
-                                                error = "Invalid code: ${e.message}"
-                                            } finally {
-                                                isLoading = false
+                                            } else {
+                                                error = result.exceptionOrNull()?.message ?: "Invalid code"
                                             }
+                                            isLoading = false
                                         }
                                     }
                                 },
@@ -610,7 +607,10 @@ fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
 @Composable
 fun GoogleLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
     var isLoading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
     val language = LocalAppLanguage.current
+    val loginRepository = koinInject<LoginRepository>()
+    val scope = rememberCoroutineScope()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -628,10 +628,35 @@ fun GoogleLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                 if (isLoading) {
                     CircularProgressIndicator(color = Primary)
                 } else {
-                    Text("Simulating Google OAuth flow...", color = Color.Gray)
+                    Text(
+                        text = error ?: LocalStrings.get("sign_in_google", language),
+                        color = if (error != null) Color.Red else Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
-                        onClick = { isLoading = true },
+                        onClick = { 
+                            isLoading = true
+                            scope.launch {
+                                signInWithGoogle(
+                                    onSuccess = { idToken ->
+                                        scope.launch {
+                                            val result = loginRepository.googleLogin(idToken)
+                                            if (result.isSuccess) {
+                                                onLoginSuccess()
+                                            } else {
+                                                error = result.exceptionOrNull()?.message
+                                                isLoading = false
+                                            }
+                                        }
+                                    },
+                                    onError = { msg ->
+                                        error = msg
+                                        isLoading = false
+                                    }
+                                )
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4285F4)),
                         shape = RoundedCornerShape(28.dp)
@@ -642,13 +667,6 @@ fun GoogleLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
             }
         }
     )
-
-    if (isLoading) {
-        LaunchedEffect(Unit) {
-            delay(1500)
-            onLoginSuccess()
-        }
-    }
 }
 
 @Composable
@@ -659,7 +677,7 @@ fun LoginButton(text: String, icon: (@Composable () -> Unit)?, onClick: () -> Un
             .fillMaxWidth()
             .height(56.dp)
             .padding(vertical = 4.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f)),
+        colors = ButtonDefaults.buttonColors(containerColor = Primary),
         shape = RoundedCornerShape(28.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

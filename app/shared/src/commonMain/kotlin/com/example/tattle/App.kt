@@ -27,6 +27,7 @@ import com.example.tattle.ui.theme.LocalAppLanguage
 import com.example.tattle.ui.theme.LocalStrings
 import com.example.tattle.ui.theme.TattleTheme
 import com.example.tattle.ui.viewmodels.AppViewModel
+import io.github.jan.supabase.auth.status.SessionStatus
 import org.koin.compose.KoinContext
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -46,6 +47,7 @@ fun App() {
     KoinContext {
         val viewModel: AppViewModel = koinViewModel()
         val preferences by viewModel.preferences.collectAsState()
+        val sessionStatus by viewModel.sessionStatus.collectAsState()
         val navController = rememberNavController()
         val appLanguage = preferences?.language ?: "English"
 
@@ -58,15 +60,22 @@ fun App() {
                 var activeArticle by remember { mutableStateOf<Article?>(null) }
                 var activeBriefArticle by remember { mutableStateOf<Article?>(null) }
 
-                // Auto-redirect from Splash if already onboarded
-                LaunchedEffect(preferences?.isOnboarded) {
-                    if (preferences?.isOnboarded == true && currentRoute == Screen.Splash.route) {
-                        navController.navigate(Screen.Feed.route) {
-                            popUpTo(Screen.Splash.route) { inclusive = true }
+                // Auto-redirect from Splash if already onboarded or authenticated
+                LaunchedEffect(preferences?.isOnboarded, sessionStatus) {
+                    if (currentRoute == Screen.Splash.route) {
+                        val isCorrectlyOnboarded = preferences?.let { 
+                            it.isOnboarded && it.interests.isNotEmpty() 
+                        } ?: false
+                        
+                        if (isCorrectlyOnboarded || sessionStatus is SessionStatus.Authenticated) {
+                            val nextRoute = if (isCorrectlyOnboarded) Screen.Feed.route else Screen.Onboarding.route
+                            navController.navigate(nextRoute) {
+                                popUpTo(Screen.Splash.route) { inclusive = true }
+                            }
                         }
                     }
                 }
-
+                
                 Scaffold(
                     bottomBar = {
                         if (currentRoute in listOf(
@@ -81,10 +90,15 @@ fun App() {
                             BottomNav(
                                 currentRoute = currentRoute ?: "",
                                 onScreenSelected = { screen ->
-                                    navController.navigate(screen.route) {
-                                        popUpTo(Screen.Feed.route) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
+                                    if (currentRoute != screen.route) {
+                                        navController.navigate(screen.route) {
+                                            // Pop up to the first screen after Splash/Onboarding to avoid stacking
+                                            popUpTo(Screen.Feed.route) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                     }
                                 }
                             )
@@ -96,8 +110,20 @@ fun App() {
                         NavHost(
                             navController = navController,
                             startDestination = Screen.Splash.route,
-                            enterTransition = { fadeIn(tween(500)) },
-                            exitTransition = { fadeOut(tween(500)) }
+                            enterTransition = { 
+                                if (initialState.destination.route == Screen.Splash.route) {
+                                    fadeIn(tween(500))
+                                } else {
+                                    slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) + fadeIn()
+                                }
+                            },
+                            exitTransition = { 
+                                if (targetState.destination.route == Screen.Splash.route) {
+                                    fadeOut(tween(500))
+                                } else {
+                                    slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300)) + fadeOut()
+                                }
+                            }
                         ) {
                             composable(Screen.Splash.route) {
                                 SplashScreen(onGetStarted = {
@@ -187,6 +213,9 @@ fun App() {
                                             navController.navigate(Screen.Splash.route) {
                                                 popUpTo(0) { inclusive = true }
                                             }
+                                        },
+                                        onBack = {
+                                            navController.popBackStack()
                                         }
                                     )
                                 }
