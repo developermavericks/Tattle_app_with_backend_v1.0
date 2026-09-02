@@ -34,6 +34,7 @@ import org.koin.compose.koinInject
 @Composable
 fun ExploreScreen(
     preferences: UserPreferences,
+    onCategoryClick: (String) -> Unit,
     onOpenArticle: (Article) -> Unit,
     onOpenSettings: () -> Unit
 ) {
@@ -42,10 +43,31 @@ fun ExploreScreen(
     var searchQuery by remember { mutableStateOf("") }
     
     val categories = listOf(
-        "Entertainment", "Bollywood", "Tech", "AI & Robotics", 
-        "Wellness", "Sports", "Money", "Pop Culture", 
-        "Science & Space", "Climate", "Fashion", "Gaming"
+        "ai", "climate and environment", "creator economy", "education",
+        "gaming", "geopolitics", "healthcare", "lifestyle",
+        "media and entertainment", "money and business", "pop culture",
+        "science and space", "sports", "startups", "tech", "world news"
     )
+
+    fun getDisplayName(slug: String): String = when (slug.lowercase()) {
+        "ai" -> "AI & Robotics"
+        "climate and environment" -> "Climate & Environment"
+        "creator economy" -> "Creator Economy"
+        "education" -> "Education"
+        "gaming" -> "Gaming"
+        "geopolitics" -> "Geopolitics"
+        "healthcare" -> "Healthcare"
+        "lifestyle" -> "Lifestyle"
+        "media and entertainment" -> "Entertainment"
+        "money and business" -> "Business & Money"
+        "pop culture" -> "Pop Culture"
+        "science and space" -> "Science & Space"
+        "sports" -> "Sports"
+        "startups" -> "Startups"
+        "tech" -> "Tech"
+        "world news" -> "World News"
+        else -> slug.replaceFirstChar { it.uppercase() }
+    }
 
     // Search Results
     var searchResults by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -143,9 +165,9 @@ fun ExploreScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             pair.forEach { category ->
                                 CategoryCard(
-                                    name = category,
+                                    name = getDisplayName(category),
                                     modifier = Modifier.weight(1f),
-                                    onClick = { searchQuery = category }
+                                    onClick = { onCategoryClick(category) }
                                 )
                             }
                         }

@@ -53,14 +53,38 @@ object AuthConfig {
 val otpStore = ConcurrentHashMap<String, String>()
 
 fun main() {
-    // Initialize Local Database
-    Database.connect("jdbc:sqlite:./tattle.db", "org.sqlite.JDBC")
-    transaction {
-        SchemaUtils.create(Users)
+    // Initialize Local Database (PostgreSQL in Docker on port 5433 with SQLite fallback)
+    try {
+        Database.connect(
+            url = "jdbc:postgresql://localhost:5433/tattle_db",
+            driver = "org.postgresql.Driver",
+            user = "tattle_user",
+            password = "tattle_password"
+        )
+        transaction {
+            SchemaUtils.create(Users)
+        }
+        println("------------------------------------")
+        println("Connected to Docker PostgreSQL (tattle_db) successfully!")
+        println("------------------------------------")
+    } catch (e: Exception) {
+        println("------------------------------------")
+        println("PostgreSQL connection failed (${e.message}). Falling back to SQLite...")
+        println("------------------------------------")
+        Database.connect("jdbc:sqlite:./tattle.db", "org.sqlite.JDBC")
+        transaction {
+            SchemaUtils.create(Users)
+        }
     }
 
-    embeddedServer(Netty, port = 8081, host = "0.0.0.0", module = Application::module)
-        .start(wait = true)
+    val server = embeddedServer(Netty, port = 8081, host = "0.0.0.0", module = Application::module)
+
+    // Add graceful shutdown hook
+    Runtime.getRuntime().addShutdownHook(Thread {
+        server.stop(1000, 3000)
+    })
+
+    server.start(wait = true)
 }
 
 fun Application.module() {

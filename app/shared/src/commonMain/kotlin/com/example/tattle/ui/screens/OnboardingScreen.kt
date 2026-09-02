@@ -80,39 +80,36 @@ fun OnboardingScreen(
         val finalSectors = if (sectors.isNotEmpty()) {
             sectors
         } else {
-            // Full list of 16 sectors as fallback
+            // Full list of 16 sectors from integration prompt
             listOf(
-                "ai", "tech", "gaming", "money and business", "pop culture", 
-                "sports", "science and space", "climate and environment", 
-                "media and entertainment", "bollywood", "fashion", "wellness",
-                "healthcare", "education", "geopolitics", "lifestyle"
+                "ai", "climate and environment", "creator economy", "education",
+                "gaming", "geopolitics", "healthcare", "lifestyle",
+                "media and entertainment", "money and business", "pop culture",
+                "science and space", "sports", "startups", "tech", "world news"
             )
         }
 
         dynamicInterests = finalSectors.map { sector ->
-            val icon = when {
-                sector.contains("ai", true) -> "🤖"
-                sector.contains("tech", true) -> "💻"
-                sector.contains("gaming", true) -> "🎮"
-                sector.contains("money", true) || sector.contains("business", true) -> "💰"
-                sector.contains("pop culture", true) || sector.contains("pop_culture", true) -> "🎶"
-                sector.contains("sport", true) -> "⚽"
-                sector.contains("space", true) || sector.contains("science", true) -> "🚀"
-                sector.contains("climate", true) || sector.contains("environment", true) -> "🌍"
-                sector.contains("media", true) || sector.contains("entertainment", true) -> "🎬"
-                sector.contains("bollywood", true) -> "🎞️"
-                sector.contains("fashion", true) -> "👗"
-                sector.contains("wellness", true) -> "🧘"
-                sector.contains("health", true) -> "🏥"
-                sector.contains("education", true) -> "📚"
-                sector.contains("geopolitics", true) -> "🌐"
-                sector.contains("lifestyle", true) -> "✨"
-                sector.contains("creator", true) -> "🤳"
-                else -> "📰"
+            val (icon, name) = when (sector.lowercase()) {
+                "ai" -> "🤖" to "AI & Robotics"
+                "climate and environment" -> "🌍" to "Climate & Environment"
+                "creator economy" -> "🤳" to "Creator Economy"
+                "education" -> "📚" to "Education"
+                "gaming" -> "🎮" to "Gaming"
+                "geopolitics" -> "🌐" to "Geopolitics"
+                "healthcare" -> "🏥" to "Healthcare"
+                "lifestyle" -> "✨" to "Lifestyle"
+                "media and entertainment" -> "🎬" to "Entertainment"
+                "money and business" -> "💰" to "Business & Money"
+                "pop culture" -> "🎶" to "Pop Culture"
+                "science and space" -> "🚀" to "Science & Space"
+                "sports" -> "⚽" to "Sports"
+                "startups" -> "🚀" to "Startups"
+                "tech" -> "💻" to "Tech"
+                "world news" -> "📰" to "World News"
+                else -> "📰" to sector.split(" ").joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
             }
-            // Capitalize for display
-            val displayName = sector.split(" ").joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
-            Interest(id = sector, icon = icon, displayName = displayName)
+            Interest(id = sector, icon = icon, displayName = name)
         }
     }
 

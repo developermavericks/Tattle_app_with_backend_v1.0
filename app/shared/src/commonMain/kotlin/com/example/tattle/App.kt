@@ -31,6 +31,8 @@ import io.github.jan.supabase.auth.status.SessionStatus
 import org.koin.compose.KoinContext
 import org.koin.compose.viewmodel.koinViewModel
 
+import com.example.tattle.utils.shareArticleContent
+
 sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
     data object Onboarding : Screen("onboarding")
@@ -48,6 +50,7 @@ fun App() {
         val viewModel: AppViewModel = koinViewModel()
         val preferences by viewModel.preferences.collectAsState()
         val sessionStatus by viewModel.sessionStatus.collectAsState()
+        val currentFeedTab by viewModel.currentFeedTab.collectAsState()
         val navController = rememberNavController()
         val appLanguage = preferences?.language ?: "English"
 
@@ -91,13 +94,14 @@ fun App() {
                                 currentRoute = currentRoute ?: "",
                                 onScreenSelected = { screen ->
                                     if (currentRoute != screen.route) {
-                                        navController.navigate(screen.route) {
-                                            // Pop up to the first screen after Splash/Onboarding to avoid stacking
-                                            popUpTo(Screen.Feed.route) {
-                                                saveState = true
+                                        if (screen == Screen.Feed) {
+                                            navController.popBackStack(Screen.Feed.route, inclusive = false)
+                                        } else {
+                                            navController.navigate(screen.route) {
+                                                popUpTo(Screen.Feed.route) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
                                             }
-                                            launchSingleTop = true
-                                            restoreState = true
                                         }
                                     }
                                 }
@@ -158,10 +162,12 @@ fun App() {
                                 preferences?.let { prefs ->
                                     FeedScreen(
                                         preferences = prefs,
+                                        activeTab = currentFeedTab ?: prefs.interests.firstOrNull() ?: "for_you",
+                                        onTabSelected = { viewModel.setFeedTab(it) },
                                         onUpdatePreferences = { viewModel.updatePreferences(it) },
                                         onOpenArticle = { activeArticle = it },
                                         onLaunchBrief = { activeBriefArticle = it },
-                                        onShareArticle = { /* Share simulation */ },
+                                        onShareArticle = { article -> shareArticleContent(article) },
                                         onOpenSettings = { navController.navigate(Screen.Settings.route) },
                                         onSessionEnd = { navController.navigate(Screen.Recap.route) }
                                     )
@@ -171,6 +177,12 @@ fun App() {
                                 preferences?.let { prefs ->
                                     ExploreScreen(
                                         preferences = prefs,
+                                        onCategoryClick = { sector ->
+                                            viewModel.setFeedTab(sector)
+                                            navController.navigate(Screen.Feed.route) {
+                                                popUpTo(Screen.Feed.route) { inclusive = true }
+                                            }
+                                        },
                                         onOpenArticle = { activeArticle = it },
                                         onOpenSettings = { navController.navigate(Screen.Settings.route) }
                                     )
@@ -198,7 +210,8 @@ fun App() {
                                 preferences?.let { prefs ->
                                     RecapScreen(
                                         preferences = prefs,
-                                        onTuneFeed = { navController.navigate(Screen.Settings.route) }
+                                        onTuneFeed = { navController.navigate(Screen.Settings.route) },
+                                        onBack = { navController.popBackStack() }
                                     )
                                 }
                             }
@@ -243,7 +256,7 @@ fun App() {
                                             viewModel.updatePreferences(prefs.copy(bookmarks = newBookmarks))
                                         }
                                     },
-                                    onShare = { /* Share */ },
+                                    onShare = { shareArticleContent(article) },
                                     onLaunchFullText = {
                                         activeArticle = article
                                         activeBriefArticle = null
@@ -272,7 +285,7 @@ fun App() {
                                             viewModel.updatePreferences(prefs.copy(bookmarks = newBookmarks))
                                         }
                                     },
-                                    onShare = { /* Share */ }
+                                    onShare = { shareArticleContent(article) }
                                 )
                             }
                         }

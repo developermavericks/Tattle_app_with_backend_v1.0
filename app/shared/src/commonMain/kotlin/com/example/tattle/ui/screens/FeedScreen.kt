@@ -2,6 +2,7 @@ package com.example.tattle.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,17 +12,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.ThumbDown
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -34,12 +30,16 @@ import com.example.tattle.models.UserPreferences
 import com.example.tattle.ui.components.ArticleCard
 import com.example.tattle.ui.components.SurveyCard
 import com.example.tattle.ui.theme.*
+import com.example.tattle.utils.currentTimeMillis
 import org.koin.compose.koinInject
 import kotlinx.coroutines.delay
+import kotlinx.datetime.Clock
 
 @Composable
 fun FeedScreen(
     preferences: UserPreferences,
+    activeTab: String,
+    onTabSelected: (String) -> Unit,
     onUpdatePreferences: (UserPreferences) -> Unit,
     onOpenArticle: (Article) -> Unit,
     onLaunchBrief: (Article) -> Unit,
@@ -52,12 +52,9 @@ fun FeedScreen(
     val articleRepository = koinInject<ArticleRepository>()
     
     val userSectors = preferences.interests
-    var activeTab by remember { mutableStateOf(userSectors.firstOrNull() ?: "for_you") }
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by remember(activeTab) { mutableStateOf(0) }
     var showSurvey by remember { mutableStateOf(false) }
     var cardsSinceSurvey by remember { mutableStateOf(0) }
-    var sessionCardsRead by remember { mutableStateOf(0) }
-    val sessionCap = 10 
 
     val tabsList = userSectors.ifEmpty { listOf("for_you") }
 
@@ -65,26 +62,28 @@ fun FeedScreen(
     var dynamicArticles by remember { mutableStateOf<List<Article>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
-    LaunchedEffect(activeTab) {
-        if (activeTab != "saved" && activeTab != "for_you") {
-            isLoading = true
-            val articles = articleRepository.getArticlesBySector(activeTab)
-            dynamicArticles = articles
-            isLoading = false
-        } else {
-            dynamicArticles = emptyList()
+    LaunchedEffect(activeTab, preferences.bookmarks) {
+        isLoading = true
+        dynamicArticles = when (activeTab) {
+            "saved" -> articleRepository.getArticlesByIds(preferences.bookmarks)
+            "for_you" -> articleRepository.getForYouArticles(userSectors)
+            else -> articleRepository.getArticlesBySector(activeTab)
         }
+        isLoading = false
     }
 
     val filteredArticles = remember(activeTab, preferences.bookmarks, dynamicArticles) {
         if (dynamicArticles.isNotEmpty()) {
             dynamicArticles
         } else {
-            val baseList = MockData.articles.filter { it.language == preferences.language }
+            val baseList = MockData.articles
             when (activeTab) {
                 "saved" -> baseList.filter { preferences.bookmarks.contains(it.id) }
                 "for_you" -> baseList
-                else -> baseList.filter { it.category.lowercase().contains(activeTab.lowercase()) }
+                else -> {
+                    val matching = baseList.filter { it.category.lowercase().contains(activeTab.lowercase()) }
+                    matching.ifEmpty { baseList }
+                }
             }
         }
     }
@@ -94,10 +93,9 @@ fun FeedScreen(
     // Real-time Polling for Ollama content
     LaunchedEffect(currentArticle?.id) {
         val article = currentArticle ?: return@LaunchedEffect
-        // If it's a placeholder, start polling
         if (article.hook.contains("processed by AI")) {
             while (true) {
-                delay(10000) // Ping every 10 seconds to be gentle
+                delay(10000)
                 val updatedArticle = articleRepository.pollArticleUpdate(activeTab, article.id)
                 if (updatedArticle != null) {
                     dynamicArticles = dynamicArticles.map {
@@ -109,19 +107,24 @@ fun FeedScreen(
         }
     }
 
+    val nowMillis = currentTimeMillis()
+    val isLockedOut = preferences.lockoutUntil != null && preferences.lockoutUntil > nowMillis
+
     Scaffold(
         containerColor = Color.White,
         topBar = {
             Column(modifier = Modifier.background(Color.White)) {
-                FeedHeader(preferences = preferences, language = language, onOpenSettings = onOpenSettings)
+                FeedHeader(
+                    preferences = preferences,
+                    language = language,
+                    onOpenSettings = onOpenSettings,
+                    onOpenRecap = onSessionEnd
+                )
                 TabsRow(
                     tabs = tabsList,
                     activeTab = activeTab,
                     language = language,
-                    onTabSelected = {
-                        activeTab = it
-                        currentIndex = 0
-                    }
+                    onTabSelected = onTabSelected
                 )
                 ProgressLine(
                     progress = if (filteredArticles.isNotEmpty()) (currentIndex + 1).toFloat() / filteredArticles.size else 0f
@@ -139,15 +142,21 @@ fun FeedScreen(
                 OfflineBanner(language = language, modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp))
             }
 
-            if (isLoading) {
+            if (isLockedOut) {
+                // Lockout Card
+                LockoutScreen(
+                    lockoutUntil = preferences.lockoutUntil!!,
+                    onUnlockViaSurvey = { showSurvey = true },
+                    modifier = Modifier.padding(24.dp)
+                )
+            } else if (isLoading) {
                 CircularProgressIndicator(color = Primary)
             } else if (showSurvey) {
                 SurveyCard(
                     survey = MockData.surveys[0],
                     onComplete = {
                         showSurvey = false
-                        // Grant 3 hours ad-free (simplified)
-                        onUpdatePreferences(preferences.copy(adFreeUntil = "AdFree"))
+                        onUpdatePreferences(preferences.copy(lockoutUntil = null, adFreeUntil = "AdFree"))
                         proceedNext(
                             currentIndex,
                             filteredArticles.size,
@@ -160,19 +169,12 @@ fun FeedScreen(
                     },
                     onSkip = {
                         showSurvey = false
-                        proceedNext(
-                            currentIndex,
-                            filteredArticles.size,
-                            { currentIndex = it },
-                            { cardsSinceSurvey = it },
-                            cardsSinceSurvey,
-                            { showSurvey = it },
-                            preferences
-                        )
+                        val lockoutTime = currentTimeMillis() + (3 * 3600 * 1000)
+                        onUpdatePreferences(preferences.copy(lockoutUntil = lockoutTime))
                     },
                     onWatchAd = {
                         showSurvey = false
-                        onUpdatePreferences(preferences.copy(adFreeUntil = "AdFree"))
+                        onUpdatePreferences(preferences.copy(lockoutUntil = null, adFreeUntil = "AdFree"))
                         proceedNext(
                             currentIndex,
                             filteredArticles.size,
@@ -186,7 +188,7 @@ fun FeedScreen(
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             } else if (currentArticle == null) {
-                EmptyState(activeTab, language) { activeTab = "for_you" }
+                EmptyState(activeTab, language) { onTabSelected("for_you") }
             } else {
                 AnimatedContent(
                     targetState = currentArticle,
@@ -242,27 +244,21 @@ fun FeedScreen(
                                         totalCardsRead = preferences.totalCardsRead + 1
                                     )
                                 )
-                                sessionCardsRead++
-                                if (sessionCardsRead >= sessionCap) {
-                                    onSessionEnd()
-                                } else {
-                                    proceedNext(
-                                        currentIndex,
-                                        filteredArticles.size,
-                                        { currentIndex = it },
-                                        { cardsSinceSurvey = it },
-                                        cardsSinceSurvey,
-                                        { showSurvey = it },
-                                        preferences
-                                    )
-                                }
+                                proceedNext(
+                                    currentIndex,
+                                    filteredArticles.size,
+                                    { currentIndex = it },
+                                    { cardsSinceSurvey = it },
+                                    cardsSinceSurvey,
+                                    { showSurvey = it },
+                                    preferences
+                                )
                             },
                             onReaction = { emoji ->
                                 val newReactions = preferences.reactions + (targetArticle.id to emoji)
                                 onUpdatePreferences(preferences.copy(reactions = newReactions))
                             },
                             onImageLoaded = { url ->
-                                // Update the article in the list if it's dynamic
                                 if (dynamicArticles.any { it.id == targetArticle.id }) {
                                     dynamicArticles = dynamicArticles.map {
                                         if (it.id == targetArticle.id) it.copy(imageUrl = url) else it
@@ -289,7 +285,7 @@ private fun proceedNext(
     preferences: UserPreferences
 ) {
     val nextCardsCount = cardsSinceSurvey + 1
-    if (nextCardsCount >= 4 && preferences.adFreeUntil == null) {
+    if (nextCardsCount >= 5 && preferences.adFreeUntil == null) {
         onShowSurvey(true)
         onSurveyCountUpdate(0)
     } else {
@@ -303,7 +299,74 @@ private fun proceedNext(
 }
 
 @Composable
-fun FeedHeader(preferences: UserPreferences, language: String, onOpenSettings: () -> Unit) {
+fun LockoutScreen(
+    lockoutUntil: Long,
+    onUnlockViaSurvey: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val remainingMillis = (lockoutUntil - currentTimeMillis()).coerceAtLeast(0)
+    val remainingHours = remainingMillis / (3600 * 1000)
+    val remainingMins = (remainingMillis % (3600 * 1000)) / (60 * 1000)
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(CircleShape)
+                    .background(Primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.HourglassTop, null, tint = Primary, modifier = Modifier.size(36.dp))
+            }
+
+            Text(
+                text = "3-Hour Cool Off",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+
+            Text(
+                text = "You skipped the survey. Come back in $remainingHours hrs $remainingMins mins to continue reading news, or complete the quick survey now to unlock immediately!",
+                fontSize = 15.sp,
+                color = Color.DarkGray,
+                textAlign = TextAlign.Center,
+                lineHeight = 22.sp
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = onUnlockViaSurvey,
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(28.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Primary)
+            ) {
+                Icon(Icons.Default.Assignment, null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Take Survey & Unlock Now", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+        }
+    }
+}
+
+@Composable
+fun FeedHeader(
+    preferences: UserPreferences,
+    language: String,
+    onOpenSettings: () -> Unit,
+    onOpenRecap: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -320,12 +383,29 @@ fun FeedHeader(preferences: UserPreferences, language: String, onOpenSettings: (
             )
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Daily Recap Button at Top
+            Surface(
+                onClick = onOpenRecap,
+                shape = RoundedCornerShape(20.dp),
+                color = Primary.copy(alpha = 0.1f),
+                border = BorderStroke(1.dp, Primary.copy(alpha = 0.2f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(Icons.Default.Analytics, contentDescription = "Daily Recap", tint = Primary, modifier = Modifier.size(16.dp))
+                    Text("Recap", color = Primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
             if (preferences.adFreeUntil != null) {
                 Box(
                     modifier = Modifier
                         .background(Primary.copy(alpha = 0.1f), RoundedCornerShape(50))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = LocalStrings.get("ad_free", language),
@@ -337,9 +417,6 @@ fun FeedHeader(preferences: UserPreferences, language: String, onOpenSettings: (
             }
             IconButton(onClick = onOpenSettings) {
                 Icon(Icons.Default.Settings, null, tint = Color.Black)
-            }
-            IconButton(onClick = {}) {
-                Icon(Icons.Default.Notifications, null, tint = Color.Black)
             }
         }
     }

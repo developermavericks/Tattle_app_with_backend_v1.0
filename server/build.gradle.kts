@@ -22,6 +22,7 @@ dependencies {
     implementation(libs.exposed.dao)
     implementation(libs.exposed.jdbc)
     implementation(libs.sqlite.jdbc)
+    implementation(libs.postgres.jdbc)
     implementation(libs.google.api.client)
 
     implementation("io.ktor:ktor-client-content-negotiation-jvm:3.5.0")

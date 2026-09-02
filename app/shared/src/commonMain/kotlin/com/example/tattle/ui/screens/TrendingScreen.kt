@@ -8,7 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,13 +18,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tattle.data.MockData
+import com.example.tattle.data.ArticleRepository
 import com.example.tattle.models.Article
 import com.example.tattle.models.UserPreferences
 import com.example.tattle.ui.theme.LocalAppLanguage
 import com.example.tattle.ui.theme.LocalStrings
+import com.example.tattle.ui.theme.Primary
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +36,15 @@ fun TrendingScreen(
     onOpenSettings: () -> Unit
 ) {
     val language = LocalAppLanguage.current
-    val trendingArticles = MockData.articles.filter { it.language == preferences.language }.sortedByDescending { it.views }
+    val articleRepository = koinInject<ArticleRepository>()
+    var trendingArticles by remember { mutableStateOf<List<Article>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isLoading = true
+        trendingArticles = articleRepository.getTrendingArticles()
+        isLoading = false
+    }
 
     Scaffold(
         topBar = {
@@ -56,15 +66,24 @@ fun TrendingScreen(
         },
         containerColor = Color.White
     ) { paddingValues ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentAlignment = Alignment.Center
         ) {
-            items(trendingArticles) { article ->
-                TrendingArticleItem(article = article, onClick = { onOpenArticle(article) })
+            if (isLoading) {
+                CircularProgressIndicator(color = Primary)
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(trendingArticles) { article ->
+                        TrendingArticleItem(article = article, onClick = { onOpenArticle(article) })
+                    }
+                }
             }
         }
     }
@@ -97,7 +116,7 @@ fun TrendingArticleItem(article: Article, onClick: () -> Unit) {
         ) {
             Text(
                 article.category.uppercase(),
-                color = com.example.tattle.ui.theme.Primary,
+                color = Primary,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
             )

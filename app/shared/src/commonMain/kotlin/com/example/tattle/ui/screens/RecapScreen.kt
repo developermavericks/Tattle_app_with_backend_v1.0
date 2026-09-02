@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +29,7 @@ import com.example.tattle.ui.theme.*
 fun RecapScreen(
     preferences: UserPreferences,
     onTuneFeed: () -> Unit,
+    onBack: () -> Unit
 ) {
     val language = LocalAppLanguage.current
     val cardsRead = preferences.totalCardsRead.coerceAtLeast(15)
@@ -40,8 +42,23 @@ fun RecapScreen(
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(32.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
+        // Top Back Button Bar
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(Color(0xFFF5F5F5), RoundedCornerShape(12.dp))
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
+            }
+        }
+
         // Status Header
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -135,12 +152,12 @@ fun RecapScreen(
         // Actions
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Button(
-                onClick = {},
+                onClick = onBack,
                 modifier = Modifier.fillMaxWidth().height(64.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF232323), contentColor = Color.White),
                 shape = RoundedCornerShape(32.dp)
             ) {
-                Text(LocalStrings.get("share_recap", language), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("Continue Reading News", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
 
             TextButton(

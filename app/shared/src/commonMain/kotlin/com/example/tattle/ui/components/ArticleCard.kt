@@ -4,7 +4,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -54,11 +53,10 @@ fun ArticleCard(
     val language = LocalAppLanguage.current
     val imageRepository = koinInject<ImageRepository>()
     var pixabayImageUrl by remember(article.id) { mutableStateOf<String?>(null) }
-    
+    val isExpiredPixabayUrl = article.imageUrl.contains("pixabay.com/get/") || article.imageUrl.isBlank()
+
     LaunchedEffect(article.id) {
-        if (article.imageUrl.isNotEmpty() && !article.imageUrl.startsWith("http")) {
-            // Already have a local/pixabay image
-        } else if (article.imageUrl.isEmpty()) {
+        if (isExpiredPixabayUrl || pixabayImageUrl == null) {
             val headlineKeywords = article.headline
                 .split(" ")
                 .filter { it.length > 3 }
@@ -75,6 +73,8 @@ fun ArticleCard(
             if (url != null) {
                 pixabayImageUrl = url
                 onImageLoaded(url)
+            } else {
+                pixabayImageUrl = "https://picsum.photos/seed/${article.id}/800/1000"
             }
         }
     }
@@ -89,8 +89,8 @@ fun ArticleCard(
     val swipeProgress = (offsetX.value / 400f).coerceIn(-1f, 1f)
     val cardColor by animateColorAsState(
         targetValue = when {
-            swipeProgress > 0.05f -> Color(0xFF1B5E20).copy(alpha = (abs(swipeProgress) * 1.2f).coerceIn(0.1f, 0.95f)) // Darker Green
-            swipeProgress < -0.05f -> Color(0xFFB71C1C).copy(alpha = (abs(swipeProgress) * 1.2f).coerceIn(0.1f, 0.95f)) // Darker Red
+            swipeProgress > 0.05f -> Color(0xFF1B5E20).copy(alpha = (abs(swipeProgress) * 1.2f).coerceIn(0.1f, 0.95f))
+            swipeProgress < -0.05f -> Color(0xFFB71C1C).copy(alpha = (abs(swipeProgress) * 1.2f).coerceIn(0.1f, 0.95f))
             else -> Color(0xFFF5F5F5)
         },
         animationSpec = tween(150)
@@ -165,11 +165,11 @@ fun ArticleCard(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .fillMaxHeight(0.6f) // Fixed proportion for image
+                        .fillMaxHeight(0.6f)
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color.LightGray)
                 ) {
-                    val finalImageUrl = pixabayImageUrl ?: article.imageUrl
+                    val finalImageUrl = pixabayImageUrl ?: if (!isExpiredPixabayUrl) article.imageUrl else "https://picsum.photos/seed/${article.id}/800/1000"
                     
                     KamelImage(
                         resource = { asyncPainterResource(finalImageUrl) },
@@ -177,7 +177,14 @@ fun ArticleCard(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                         onLoading = { progress -> CircularProgressIndicator(progress = { progress }, color = Primary, modifier = Modifier.align(Alignment.Center).size(24.dp)) },
-                        onFailure = { Box(modifier = Modifier.fillMaxSize().background(Color.LightGray), contentAlignment = Alignment.Center) { Icon(Icons.Default.Close, null, tint = Color.Gray) } }
+                        onFailure = {
+                            KamelImage(
+                                resource = { asyncPainterResource("https://picsum.photos/seed/${article.id}/800/1000") },
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     )
 
                     // Overlay Tags
@@ -218,7 +225,7 @@ fun ArticleCard(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f) // Takes remaining 40%
+                        .weight(1f)
                         .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 8.dp)
                 ) {
                     Text(
@@ -231,9 +238,8 @@ fun ArticleCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    // Bind Summary here
                     Text(
-                        text = article.hook, // Mapped to 'summary' in Repository
+                        text = article.hook,
                         color = Color.DarkGray,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
@@ -293,7 +299,7 @@ fun ArticleCard(
                 }
             }
 
-            // Swipe Overlays (Moved to end to be on top)
+            // Swipe Overlays
             val overlayAlphaRight = (offsetX.value / 300f).coerceIn(0f, 1f)
             val overlayAlphaLeft = (-offsetX.value / 300f).coerceIn(0f, 1f)
 

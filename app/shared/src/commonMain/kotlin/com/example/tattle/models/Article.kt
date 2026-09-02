@@ -13,23 +13,22 @@ data class CuratedArticle(
     @SerialName("id") val id: Int,
     @SerialName("article_id") val articleId: String,
     @SerialName("headline") val headline: String,
-    @SerialName("url") val url: String?,
-    @SerialName("source") val source: String?,
-    @SerialName("published_at") val publishedAt: String?,
+    @SerialName("url") val url: String? = null,
+    @SerialName("source") val source: String? = null,
+    @SerialName("published_at") val publishedAt: String? = null,
     @SerialName("sector") val sector: String,
-    @SerialName("rank") val rank: Int,
-    @SerialName("final_score") val finalScore: Double,
-    @SerialName("age_bracket") val ageBracket: String,
-    @SerialName("curated_date") val curatedDate: String,
-    @SerialName("is_duplicate") val isDuplicate: Boolean,
-    @SerialName("confidence_score") val confidenceScore: Double?,
-    
-    // --- Ollama-Enriched Fields ---
-    @SerialName("ollama_processed") val ollamaProcessed: Boolean,
-    @SerialName("summary") val summary: String?,
-    @SerialName("key_takeaways") val keyTakeaways: List<String>?,
-    @SerialName("why_it_matters") val whyItMatters: String?,
-    @SerialName("cleaned_content") val cleanedContent: String?
+    @SerialName("rank") val rank: Int = 0,
+    @SerialName("final_score") val finalScore: Double = 0.0,
+    @SerialName("age_bracket") val ageBracket: String = "general",
+    @SerialName("curated_date") val curatedDate: String = "",
+    @SerialName("is_duplicate") val isDuplicate: Boolean = false,
+    @SerialName("confidence_score") val confidenceScore: Double? = null,
+    @SerialName("image_url") val imageUrl: String = "",
+    @SerialName("summary") val summary: String? = null,
+    @SerialName("key_takeaways") val keyTakeaways: List<String> = emptyList(),
+    @SerialName("why_it_matters") val whyItMatters: String? = null,
+    @SerialName("cleaned_content") val cleanedContent: String = "",
+    @SerialName("ollama_processed") val ollamaProcessed: Boolean = false
 )
 
 @Serializable
@@ -88,5 +87,6 @@ data class UserPreferences(
     val reactions: Map<String, String>,
     val adFreeUntil: String?,
     val sensitivity: String,
-    val lastReadDate: String?
+    val lastReadDate: String?,
+    val lockoutUntil: Long? = null
 )

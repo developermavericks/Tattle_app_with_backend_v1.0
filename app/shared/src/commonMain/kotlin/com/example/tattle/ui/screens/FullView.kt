@@ -146,15 +146,6 @@ fun FullView(
                 }
             }
 
-            // Body Text
-            Text(
-                text = article.fullText,
-                fontSize = 16.sp,
-                lineHeight = 26.sp,
-                color = Color.DarkGray,
-                textAlign = TextAlign.Justify
-            )
-
             // Why It Matters (Screen 8)
             Column(
                 modifier = Modifier
