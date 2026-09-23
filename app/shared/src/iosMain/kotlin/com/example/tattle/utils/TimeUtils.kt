@@ -1,5 +1,5 @@
 package com.example.tattle.utils
 
-import platform.Foundation.NSDate
+import kotlin.time.Clock
 
-actual fun currentTimeMillis(): Long = (NSDate().timeIntervalSince1960 * 1000).toLong()
+actual fun currentTimeMillis(): Long = Clock.System.now().toEpochMilliseconds()

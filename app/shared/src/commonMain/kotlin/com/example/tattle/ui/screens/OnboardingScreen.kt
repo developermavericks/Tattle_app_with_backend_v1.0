@@ -2,17 +2,12 @@ package com.example.tattle.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,13 +16,10 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -37,85 +29,109 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tattle.data.ArticleRepository
+import com.example.tattle.data.LoginRepository
 import com.example.tattle.models.NotificationsPrefs
 import com.example.tattle.models.UserPreferences
 import com.example.tattle.ui.theme.*
+import kotlinx.coroutines.launch
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 
-data class Interest(val id: String, val icon: String, val displayName: String)
+data class DetailedAge(val years: Int, val months: Int, val days: Int) {
+    fun toFormattedString(): String {
+        val yStr = if (years == 1) "1 year" else "$years years"
+        val mStr = if (months == 1) "1 month" else "$months months"
+        val dStr = if (days == 1) "1 day" else "$days days"
+        return "$yStr, $mStr, $dStr old"
+    }
+}
+
+fun calculateDetailedAgeFromDob(dobString: String): DetailedAge? {
+    if (dobString.length != 8) return null
+    return try {
+        val day = dobString.substring(0, 2).toInt()
+        val month = dobString.substring(2, 4).toInt()
+        val year = dobString.substring(4, 8).toInt()
+        
+        // Retrieve current time in local timezone
+        val now = kotlinx.datetime.Instant.fromEpochMilliseconds(
+            com.example.tattle.utils.currentTimeMillis()
+        ).toLocalDateTime(TimeZone.currentSystemDefault())
+
+        // 12:01 AM Midnight Rollover Cutoff:
+        // Before 12:01 AM (hour 0, minute 0), age is evaluated as of yesterday.
+        // From 12:01 AM onwards, age is evaluated as of the current day.
+        val effectiveDate = if (now.hour == 0 && now.minute == 0) {
+            kotlinx.datetime.Instant.fromEpochMilliseconds(
+                com.example.tattle.utils.currentTimeMillis() - 24 * 3600 * 1000L
+            ).toLocalDateTime(TimeZone.currentSystemDefault())
+        } else {
+            now
+        }
+
+        val currentYear = effectiveDate.year
+        val currentMonth = effectiveDate.monthNumber
+        val currentDay = effectiveDate.dayOfMonth
+
+        if (month !in 1..12 || day !in 1..31 || year > currentYear || year < 1900) return null
+
+        var y = currentYear - year
+        var m = currentMonth - month
+        var d = currentDay - day
+
+        if (d < 0) {
+            m -= 1
+            val prevMonth = if (currentMonth == 1) 12 else currentMonth - 1
+            val prevMonthYear = if (currentMonth == 1) currentYear - 1 else currentYear
+            val isLeapYear = (prevMonthYear % 4 == 0 && prevMonthYear % 100 != 0) || (prevMonthYear % 400 == 0)
+            val prevMonthDays = when (prevMonth) {
+                1, 3, 5, 7, 8, 10, 12 -> 31
+                4, 6, 9, 11 -> 30
+                2 -> if (isLeapYear) 29 else 28
+                else -> 30
+            }
+            d += prevMonthDays
+        }
+
+        if (m < 0) {
+            y -= 1
+            m += 12
+        }
+
+        if (y in 0..120 && !(y == 0 && m == 0 && d < 0)) DetailedAge(y, m, d) else null
+    } catch (_: Exception) {
+        null
+    }
+}
+
+fun calculateAgeFromDob(dobString: String): Int? {
+    return calculateDetailedAgeFromDob(dobString)?.years
+}
 
 @Composable
 fun OnboardingScreen(
     onComplete: (UserPreferences) -> Unit,
     onBack: () -> Unit
 ) {
-    val articleRepository = koinInject<ArticleRepository>()
+    val scope = rememberCoroutineScope()
+    val loginRepository = koinInject<LoginRepository>()
     var step by remember { mutableStateOf(1) }
-    var language by remember { mutableStateOf("English") }
-    var age by remember { mutableStateOf("") }
     var dob by remember { mutableStateOf("") }
-    val selectedInterests = remember { mutableStateListOf<String>() }
     var notificationsEnabled by remember { mutableStateOf<Boolean?>(null) }
 
-    val staticInterests = listOf(
-        "🎬" to "entertainment",
-        "🎞️" to "bollywood",
-        "🎮" to "gaming",
-        "💻" to "tech",
-        "🌍" to "climate",
-        "🎶" to "pop_culture",
-        "💰" to "money",
-        "🚀" to "science_space",
-        "👗" to "fashion",
-        "🤖" to "ai_robotics",
-        "🧘" to "wellness",
-        "⚽" to "sports"
-    ).toMap()
+    val calculatedAge = calculateAgeFromDob(dob)
 
-    var dynamicInterests by remember { mutableStateOf<List<Interest>>(emptyList()) }
-
-    LaunchedEffect(Unit) {
-        val sectors = articleRepository.getSectors()
-        val finalSectors = if (sectors.isNotEmpty()) {
-            sectors
-        } else {
-            // Full list of 16 sectors from integration prompt
-            listOf(
-                "ai", "climate and environment", "creator economy", "education",
-                "gaming", "geopolitics", "healthcare", "lifestyle",
-                "media and entertainment", "money and business", "pop culture",
-                "science and space", "sports", "startups", "tech", "world news"
-            )
-        }
-
-        dynamicInterests = finalSectors.map { sector ->
-            val (icon, name) = when (sector.lowercase()) {
-                "ai" -> "🤖" to "AI & Robotics"
-                "climate and environment" -> "🌍" to "Climate & Environment"
-                "creator economy" -> "🤳" to "Creator Economy"
-                "education" -> "📚" to "Education"
-                "gaming" -> "🎮" to "Gaming"
-                "geopolitics" -> "🌐" to "Geopolitics"
-                "healthcare" -> "🏥" to "Healthcare"
-                "lifestyle" -> "✨" to "Lifestyle"
-                "media and entertainment" -> "🎬" to "Entertainment"
-                "money and business" -> "💰" to "Business & Money"
-                "pop culture" -> "🎶" to "Pop Culture"
-                "science and space" -> "🚀" to "Science & Space"
-                "sports" -> "⚽" to "Sports"
-                "startups" -> "🚀" to "Startups"
-                "tech" -> "💻" to "Tech"
-                "world news" -> "📰" to "World News"
-                else -> "📰" to sector.split(" ").joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
-            }
-            Interest(id = sector, icon = icon, displayName = name)
-        }
-    }
+    val defaultSectors = listOf(
+        "ai", "climate and environment", "creator economy", "education",
+        "gaming", "geopolitics", "healthcare", "lifestyle",
+        "media and entertainment", "money and business", "pop culture",
+        "science and space", "sports", "startups", "tech", "world news"
+    )
 
     Scaffold(
         topBar = {
-            OnboardingHeader(step = step, language = language, onBack = { 
+            OnboardingHeader(step = step, onBack = { 
                 if (step > 1) step-- else onBack() 
             })
         },
@@ -123,22 +139,19 @@ fun OnboardingScreen(
         bottomBar = {
             OnboardingFooter(
                 step = step,
-                language = language,
                 canGoNext = when (step) {
-                    1 -> language.isNotEmpty()
-                    2 -> (age.isNotEmpty() && (age.toIntOrNull() ?: 0) in 13..100) || dob.length == 8
-                    3 -> selectedInterests.size >= 3
+                    1 -> dob.length == 8 && calculatedAge != null
                     else -> true
                 },
                 onNext = {
-                    if (step < 4) {
+                    if (step < 2) {
                         step++
                     } else {
                         val prefs = UserPreferences(
                             isOnboarded = true,
-                            ageGroup = if (age.isNotEmpty()) age else "18-24",
-                            interests = selectedInterests.toList(),
-                            language = language,
+                            ageGroup = calculatedAge?.toString() ?: "18-24",
+                            interests = defaultSectors,
+                            language = "English",
                             notifications = NotificationsPrefs(
                                 dailyBriefings = notificationsEnabled ?: true,
                                 breakingAlerts = notificationsEnabled ?: true,
@@ -151,8 +164,16 @@ fun OnboardingScreen(
                             reactions = emptyMap(),
                             adFreeUntil = null,
                             sensitivity = "Standard",
-                            lastReadDate = null
+                            lastReadDate = null,
+                            dob = dob
                         )
+                        scope.launch {
+                            loginRepository.syncProfileWithServer(
+                                dob = dob,
+                                age = calculatedAge,
+                                notificationsEnabled = notificationsEnabled ?: true
+                            )
+                        }
                         onComplete(prefs)
                     }
                 }
@@ -183,29 +204,13 @@ fun OnboardingScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     when (targetStep) {
-                        1 -> LanguageStep(
-                            selectedLanguage = language,
-                            onLanguageSelected = { language = it }
-                        )
-                        2 -> AgeStep(
-                            age = age, 
+                        1 -> DobAgeStep(
                             dob = dob,
-                            language = language, 
-                            onAgeChange = { if (it.length <= 3) age = it.filter { c -> c.isDigit() } },
+                            calculatedAge = calculatedAge,
                             onDobChange = { if (it.length <= 8) dob = it.filter { c -> c.isDigit() } }
                         )
-                        3 -> InterestStep(
-                            interests = dynamicInterests,
-                            selectedInterests = selectedInterests,
-                            language = language,
-                            onToggle = { id ->
-                                if (selectedInterests.contains(id)) selectedInterests.remove(id)
-                                else selectedInterests.add(id)
-                            }
-                        )
-                        4 -> NotificationStep(
+                        2 -> NotificationStep(
                             isEnabled = notificationsEnabled == true,
-                            language = language,
                             onToggle = { notificationsEnabled = !(notificationsEnabled ?: false) }
                         )
                     }
@@ -216,7 +221,7 @@ fun OnboardingScreen(
 }
 
 @Composable
-fun OnboardingHeader(step: Int, language: String, onBack: () -> Unit) {
+fun OnboardingHeader(step: Int, onBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -228,7 +233,7 @@ fun OnboardingHeader(step: Int, language: String, onBack: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack, modifier = Modifier.size(24.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, LocalStrings.get("back", language), tint = Color.Black)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.Black)
             }
             Spacer(modifier = Modifier.weight(1f))
             Box(
@@ -240,7 +245,7 @@ fun OnboardingHeader(step: Int, language: String, onBack: () -> Unit) {
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(step / 4f)
+                        .fillMaxWidth(step / 2f)
                         .fillMaxHeight()
                         .clip(CircleShape)
                         .background(Primary)
@@ -255,7 +260,6 @@ fun OnboardingHeader(step: Int, language: String, onBack: () -> Unit) {
 @Composable
 fun OnboardingFooter(
     step: Int,
-    language: String,
     canGoNext: Boolean,
     onNext: () -> Unit
 ) {
@@ -279,7 +283,7 @@ fun OnboardingFooter(
             shape = RoundedCornerShape(28.dp)
         ) {
             Text(
-                text = if (step == 4) LocalStrings.get("finish", language) else LocalStrings.get("next", language),
+                text = if (step == 2) "Finish" else "Next",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
@@ -288,106 +292,38 @@ fun OnboardingFooter(
 }
 
 @Composable
-fun LanguageStep(selectedLanguage: String, onLanguageSelected: (String) -> Unit) {
-    val languages = listOf("English", "Hindi")
-    
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = LocalStrings.get("select_your_language", selectedLanguage),
-            color = Color.Black,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = LocalStrings.get("choose_primary_language", selectedLanguage),
-            color = Color.Black,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
-            textAlign = TextAlign.Center
-        )
-
-        languages.forEach { lang ->
-            val isSelected = lang == selectedLanguage
-            Surface(
-                onClick = { onLanguageSelected(lang) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .height(64.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = if (isSelected) Primary else Color(0xFFF5F5F5),
-                border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE8E8E8))
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = lang,
-                        color = if (isSelected) Color.White else Color.Black,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun AgeStep(age: String, dob: String, language: String, onAgeChange: (String) -> Unit, onDobChange: (String) -> Unit) {
-    val isAgeError = age.isNotEmpty() && (age.toIntOrNull() ?: 0) !in 13..100
-    
-    // Proper DOB Validation
-    val isDobError = remember(dob) {
-        if (dob.length == 8) {
-            try {
-                val day = dob.substring(0, 2).toInt()
-                val month = dob.substring(2, 4).toInt()
-                val year = dob.substring(4, 8).toInt()
-                
-                // Basic check for future date (hardcoded current year as 2026 for prototype context)
-                if (year > 2026) true
-                else if (year == 2026 && month > 8) true // Mocking August 2026
-                else month !in 1..12 || day !in 1..31
-            } catch (e: Exception) {
-                true
-            }
-        } else dob.isNotEmpty() && dob.length < 8
-    }
+fun DobAgeStep(dob: String, calculatedAge: Int?, onDobChange: (String) -> Unit) {
+    val isDobInvalid = dob.length == 8 && calculatedAge == null
 
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = LocalStrings.get("your_age", language),
+            text = "Enter Your Date of Birth",
             color = Color.Black,
-            fontSize = 32.sp,
+            fontSize = 30.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             textAlign = TextAlign.Center
         )
         Text(
-            text = LocalStrings.get("age_desc", language),
-            color = Color.Black,
-            fontSize = 16.sp,
+            text = "We use your date of birth to tailor news relevant to your demographic.",
+            color = Color.Gray,
+            fontSize = 15.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
             textAlign = TextAlign.Center
         )
 
-        // DOB Section
+        // DOB Input Section
         Text(
-            text = LocalStrings.get("dob_label", language),
+            text = "DATE OF BIRTH",
             color = Primary,
             fontSize = 12.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 1.sp,
-            modifier = Modifier.padding(bottom = 4.dp)
+            modifier = Modifier.padding(bottom = 8.dp)
         )
         
         Box(modifier = Modifier.width(280.dp), contentAlignment = Alignment.Center) {
@@ -395,15 +331,14 @@ fun AgeStep(age: String, dob: String, language: String, onAgeChange: (String) ->
                 value = dob,
                 onValueChange = {
                     if (it.length <= 8) {
-                        val filtered = it.filter { c -> c.isDigit() }
-                        onDobChange(filtered)
+                        onDobChange(it.filter { c -> c.isDigit() })
                     }
                 },
                 textStyle = TextStyle(
-                    fontSize = 40.sp,
+                    fontSize = 36.sp,
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
-                    color = if (isDobError) Primary else Color.Black
+                    color = if (isDobInvalid) Primary else Color.Black
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = DateVisualTransformation(),
@@ -413,7 +348,7 @@ fun AgeStep(age: String, dob: String, language: String, onAgeChange: (String) ->
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
                     disabledContainerColor = Color.Transparent,
-                    focusedIndicatorColor = if (isDobError) Primary else Color.Black,
+                    focusedIndicatorColor = if (isDobInvalid) Primary else Color.Black,
                     unfocusedIndicatorColor = Color(0xFFE8E8E8),
                     cursorColor = Primary
                 ),
@@ -422,7 +357,7 @@ fun AgeStep(age: String, dob: String, language: String, onAgeChange: (String) ->
                         "DD/MM/YYYY",
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
-                        color = Color(0xFFE8E8E8),
+                        color = Color(0xFFCCCCCC),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -430,62 +365,53 @@ fun AgeStep(age: String, dob: String, language: String, onAgeChange: (String) ->
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-        Text(LocalStrings.get("type_age_hint", language), color = Color.Gray, fontSize = 14.sp)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(36.dp))
 
-        // Age Section
-        Text(
-            text = LocalStrings.get("age_label", language),
-            color = Primary,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 1.sp,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
+        // Age Calculated Output Area
+        Surface(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(20.dp),
+            color = Color(0xFFF5F5F5),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE8E8E8))
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "YOUR CALCULATED AGE",
+                    color = Color.Gray,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
 
-        Box(modifier = Modifier.width(150.dp), contentAlignment = Alignment.Center) {
-            TextField(
-                value = age,
-                onValueChange = onAgeChange,
-                textStyle = TextStyle(
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                    color = if (isAgeError) Primary else Color.Black
-                ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                    focusedIndicatorColor = if (isAgeError) Primary else Color.Black,
-                    unfocusedIndicatorColor = Color(0xFFE8E8E8),
-                    cursorColor = Primary
-                ),
-                placeholder = {
+                val detailedAge = calculateDetailedAgeFromDob(dob)
+                if (detailedAge != null) {
                     Text(
-                        "00",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        color = Color(0xFFE8E8E8),
-                        fontSize = 48.sp,
-                        fontWeight = FontWeight.ExtraBold
+                        text = detailedAge.toFormattedString(),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Primary,
+                        textAlign = TextAlign.Center
+                    )
+                } else if (isDobInvalid) {
+                    Text(
+                        text = "Invalid Date of Birth",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Primary
+                    )
+                } else {
+                    Text(
+                        text = "Enter your date if birth above",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Gray
                     )
                 }
-            )
-        }
-        
-        if (isAgeError || (dob.length == 8 && isDobError)) {
-            Text(
-                text = if (isAgeError) LocalStrings.get("invalid_age", language) else LocalStrings.get("invalid_date", language),
-                color = Primary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(top = 16.dp)
-            )
+            }
         }
     }
 }
@@ -520,72 +446,14 @@ class DateVisualTransformation : VisualTransformation {
 }
 
 @Composable
-fun ColumnScope.InterestStep(interests: List<Interest>, selectedInterests: SnapshotStateList<String>, language: String, onToggle: (String) -> Unit) {
-    Text(
-        text = LocalStrings.get("what_are_you_into", language),
-        color = Color.Black,
-        fontSize = 32.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-    )
-    Text(
-        text = LocalStrings.get("pick_interests", language),
-        color = Color.Black,
-        fontSize = 16.sp,
-        fontWeight = FontWeight.Medium,
-        modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
-    )
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxWidth().weight(1f)
-    ) {
-        items(interests) { interest ->
-            val isSelected = selectedInterests.contains(interest.id)
-            Card(
-                onClick = { onToggle(interest.id) },
-                modifier = Modifier.aspectRatio(0.85f),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected) Primary else Color(0xFFF5F5F5)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 0.dp)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = interest.icon,
-                        fontSize = 32.sp,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                    Text(
-                        text = interest.displayName,
-                        color = if (isSelected) Color.White else Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 14.sp
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun NotificationStep(isEnabled: Boolean, language: String, onToggle: () -> Unit) {
+fun NotificationStep(isEnabled: Boolean, onToggle: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = LocalStrings.get("stay_in_loop", language),
+            text = "Stay in the Loop",
             color = Color.Black,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
@@ -593,7 +461,7 @@ fun NotificationStep(isEnabled: Boolean, language: String, onToggle: () -> Unit)
             textAlign = TextAlign.Center
         )
         Text(
-            text = if (!isEnabled) LocalStrings.get("notification_desc", language) else LocalStrings.get("you_are_all_set", language),
+            text = if (!isEnabled) "Get instant breaking news alerts and daily briefings directly to your device." else "You are all set! Notifications enabled.",
             color = Color.Black,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,

@@ -2,4 +2,4 @@ package com.example.tattle.utils
 
 import com.example.tattle.models.Article
 
-expect fun shareArticleContent(article: Article)
+expect fun shareArticleContent(article: Article, platform: String = "generic")

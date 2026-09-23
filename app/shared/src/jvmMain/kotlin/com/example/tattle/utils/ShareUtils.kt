@@ -2,6 +2,6 @@ package com.example.tattle.utils
 
 import com.example.tattle.models.Article
 
-actual fun shareArticleContent(article: Article) {
-    println("Share on Desktop: ${article.headline}")
+actual fun shareArticleContent(article: Article, platform: String) {
+    println("Share on Desktop ($platform): ${article.headline}")
 }

@@ -63,7 +63,12 @@ class SettingsPreferencesRepository(
             reactions = emptyMap(),
             adFreeUntil = null,
             sensitivity = "Standard",
-            lastReadDate = null
+            lastReadDate = null,
+            isDarkMode = false,
+            name = "",
+            phoneNumber = "",
+            email = "",
+            dob = ""
         )
     }
 }

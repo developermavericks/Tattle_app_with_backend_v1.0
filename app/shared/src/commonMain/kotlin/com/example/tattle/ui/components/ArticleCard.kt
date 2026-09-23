@@ -17,8 +17,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Image
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -29,8 +31,10 @@ import androidx.compose.ui.unit.sp
 import com.example.tattle.data.ImageRepository
 import com.example.tattle.models.Article
 import com.example.tattle.ui.theme.*
+import com.example.tattle.utils.BlurHashDecoder
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
+import io.ktor.http.Url
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import kotlin.math.abs
@@ -45,53 +49,44 @@ fun ArticleCard(
     onOpenFull: () -> Unit,
     onSwipeLeft: () -> Unit,
     onSwipeRight: () -> Unit,
+    onSwipeUp: () -> Unit = {},
     onReaction: (String) -> Unit,
     onImageLoaded: (String) -> Unit,
     currentReaction: String?,
+    isDark: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val language = LocalAppLanguage.current
     val imageRepository = koinInject<ImageRepository>()
-    var pixabayImageUrl by remember(article.id) { mutableStateOf<String?>(null) }
-    val isExpiredPixabayUrl = article.imageUrl.contains("pixabay.com/get/") || article.imageUrl.isBlank()
+    var displayImageUrl by remember(article.id) {
+        mutableStateOf(imageRepository.getCachedImage(article.id) ?: article.imageUrl)
+    }
 
     LaunchedEffect(article.id) {
-        if (isExpiredPixabayUrl || pixabayImageUrl == null) {
-            val headlineKeywords = article.headline
-                .split(" ")
-                .filter { it.length > 3 }
-                .take(2)
-                .joinToString(" ")
-            
-            val primaryQuery = "${article.category} $headlineKeywords"
-            var url = imageRepository.searchImage(primaryQuery)
-            
-            if (url == null) {
-                url = imageRepository.searchImage(article.category)
-            }
-            
-            if (url != null) {
-                pixabayImageUrl = url
-                onImageLoaded(url)
-            } else {
-                pixabayImageUrl = "https://picsum.photos/seed/${article.id}/800/1000"
-            }
-        }
+        val resolved = imageRepository.getOrFetchImageForArticle(article)
+        displayImageUrl = resolved
+        onImageLoaded(resolved)
     }
 
     var showReactions by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val offsetX = remember { Animatable(0f) }
+    val offsetY = remember { Animatable(0f) }
     val rotation = remember { Animatable(0f) }
     val scale = remember { Animatable(1f) }
+
+    val defaultCardBg = if (isDark) DarkSurface else Color.White
+    val headlineColor = if (isDark) DarkTextPrimary else Color.Black
+    val hookColor = if (isDark) DarkTextMuted else Color.DarkGray
+    val publisherColor = if (isDark) DarkTextPrimary else Color.Black
+    val timeColor = if (isDark) DarkTextMuted else Color.Gray
 
     // Color animation based on swipe
     val swipeProgress = (offsetX.value / 400f).coerceIn(-1f, 1f)
     val cardColor by animateColorAsState(
         targetValue = when {
-            swipeProgress > 0.05f -> Color(0xFF1B5E20).copy(alpha = (abs(swipeProgress) * 1.2f).coerceIn(0.1f, 0.95f))
-            swipeProgress < -0.05f -> Color(0xFFB71C1C).copy(alpha = (abs(swipeProgress) * 1.2f).coerceIn(0.1f, 0.95f))
-            else -> Color(0xFFF5F5F5)
+            swipeProgress > 0.20f -> Color(0xFFE8F5E9)
+            swipeProgress < -0.20f -> Color(0xFFFFEBEE)
+            else -> defaultCardBg
         },
         animationSpec = tween(150)
     )
@@ -101,6 +96,7 @@ fun ArticleCard(
             .fillMaxSize()
             .graphicsLayer {
                 translationX = offsetX.value
+                translationY = offsetY.value
                 rotationZ = rotation.value
                 scaleX = scale.value
                 scaleY = scale.value
@@ -110,6 +106,7 @@ fun ArticleCard(
                     onDragCancel = {
                         scope.launch {
                             launch { offsetX.animateTo(0f) }
+                            launch { offsetY.animateTo(0f) }
                             launch { rotation.animateTo(0f) }
                             launch { scale.animateTo(1f) }
                         }
@@ -125,9 +122,17 @@ fun ArticleCard(
                                 offsetX.animateTo(-1000f)
                                 onSwipeLeft()
                             }
+                        } else if (offsetY.value < -250f) {
+                            scope.launch {
+                                launch { rotation.animateTo(0f) }
+                                launch { offsetX.animateTo(0f) }
+                                launch { offsetY.animateTo(-1200f) }
+                                onSwipeUp()
+                            }
                         } else {
                             scope.launch {
                                 launch { offsetX.animateTo(0f) }
+                                launch { offsetY.animateTo(0f) }
                                 launch { rotation.animateTo(0f) }
                                 launch { scale.animateTo(1f) }
                             }
@@ -136,9 +141,17 @@ fun ArticleCard(
                     onDrag = { change, dragAmount ->
                         change.consume()
                         scope.launch {
-                            offsetX.snapTo(offsetX.value + dragAmount.x)
-                            rotation.snapTo(offsetX.value * 0.04f)
-                            scale.snapTo(1f - (abs(offsetX.value) / 2000f).coerceAtMost(0.1f))
+                            val newX = offsetX.value + dragAmount.x
+                            val newY = offsetY.value + dragAmount.y
+                            offsetX.snapTo(newX)
+                            offsetY.snapTo(newY)
+
+                            // Keep card straight (0° tilt) when dragging vertically upwards to skip
+                            val isVerticalUp = abs(newY) > abs(newX) && newY < 0f
+                            val targetRotation = if (isVerticalUp) 0f else newX * 0.04f
+                            rotation.snapTo(targetRotation)
+
+                            scale.snapTo(1f - ((abs(newX) + abs(newY)) / 2000f).coerceAtMost(0.1f))
                         }
                     }
                 )
@@ -165,58 +178,44 @@ fun ArticleCard(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .fillMaxHeight(0.6f)
+                        .weight(1.35f)
                         .clip(RoundedCornerShape(24.dp))
-                        .background(Color.LightGray)
+                        .background(if (isDark) DarkSurfaceDim else Color.LightGray)
                 ) {
-                    val finalImageUrl = pixabayImageUrl ?: if (!isExpiredPixabayUrl) article.imageUrl else "https://picsum.photos/seed/${article.id}/800/1000"
-                    
-                    KamelImage(
-                        resource = { asyncPainterResource(finalImageUrl) },
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                        onLoading = { progress -> CircularProgressIndicator(progress = { progress }, color = Primary, modifier = Modifier.align(Alignment.Center).size(24.dp)) },
-                        onFailure = {
-                            KamelImage(
-                                resource = { asyncPainterResource("https://picsum.photos/seed/${article.id}/800/1000") },
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    )
+                    // Instant 0ms BlurHash Color Placeholder Preview
+                    val blurHashBitmap = remember(article.blurHash) {
+                        BlurHashDecoder.decode(article.blurHash, width = 32, height = 18)
+                    }
 
-                    // Overlay Tags
-                    Row(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    if (blurHashBitmap != null) {
+                        Image(
+                            bitmap = blurHashBitmap,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    var imageBitmap by remember(article.id) { mutableStateOf<ImageBitmap?>(null) }
+
+                    LaunchedEffect(article.id) {
+                        imageBitmap = imageRepository.getOrFetchBitmapForArticle(article)
+                        imageRepository.getCachedImage(article.id)?.let { onImageLoaded(it) }
+                    }
+
+                    if (imageBitmap != null) {
+                        Image(
+                            bitmap = imageBitmap!!,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
                         Box(
-                            modifier = Modifier
-                                .background(Primary, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                            modifier = Modifier.fillMaxSize().background(if (isDark) DarkSurfaceDim else Color(0xFFEEEEEE)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = LocalStrings.get("trending", language),
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .background(Primary.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = article.category,
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            CircularProgressIndicator(color = Primary, modifier = Modifier.size(24.dp))
                         }
                     }
                 }
@@ -230,20 +229,20 @@ fun ArticleCard(
                 ) {
                     Text(
                         text = article.headline,
-                        color = Color.Black,
-                        fontSize = 24.sp,
+                        color = headlineColor,
+                        fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
-                        lineHeight = 28.sp,
+                        lineHeight = 24.sp,
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = article.hook,
-                        color = Color.DarkGray,
-                        fontSize = 14.sp,
+                        color = hookColor,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
-                        lineHeight = 18.sp,
+                        lineHeight = 17.sp,
                         maxLines = 4,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -264,14 +263,14 @@ fun ArticleCard(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = article.publisher,
-                                color = Color.Black,
+                                color = publisherColor,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = article.publishedAt,
-                                color = Color.Gray,
+                                color = timeColor,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium
                             )
@@ -290,7 +289,7 @@ fun ArticleCard(
                                 Icon(
                                     imageVector = Icons.Default.Share,
                                     contentDescription = null,
-                                    tint = Color.Gray,
+                                    tint = if (isDark) DarkTextMuted else Color.Gray,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -302,6 +301,7 @@ fun ArticleCard(
             // Swipe Overlays
             val overlayAlphaRight = (offsetX.value / 300f).coerceIn(0f, 1f)
             val overlayAlphaLeft = (-offsetX.value / 300f).coerceIn(0f, 1f)
+            val overlayAlphaUp = (-offsetY.value / 250f).coerceIn(0f, 1f)
 
             if (overlayAlphaRight > 0.1f) {
                 Box(
@@ -327,41 +327,15 @@ fun ArticleCard(
                 }
             }
 
-            // Reactions Overlay
-            if (showReactions) {
+            if (overlayAlphaUp > 0.1f && abs(offsetX.value) < abs(offsetY.value)) {
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5f))
-                        .clickable { showReactions = false },
-                    contentAlignment = Alignment.BottomCenter
+                        .align(Alignment.Center)
+                        .graphicsLayer(alpha = overlayAlphaUp, scaleX = overlayAlphaUp * 1.5f, scaleY = overlayAlphaUp * 1.5f)
+                        .background(Primary.copy(alpha = 0.9f), CircleShape)
+                        .padding(24.dp)
                 ) {
-                    Card(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 64.dp)
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = 0.1f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceAround
-                        ) {
-                            listOf("❤️", "😂", "😮", "🤯", "😡").forEach { emoji ->
-                                Text(
-                                    text = emoji,
-                                    fontSize = 24.sp,
-                                    modifier = Modifier
-                                        .clickable {
-                                            onReaction(emoji)
-                                            showReactions = false
-                                        }
-                                        .padding(8.dp)
-                                )
-                            }
-                        }
-                    }
+                    Icon(Icons.Default.KeyboardArrowUp, null, tint = Color.White, modifier = Modifier.size(64.dp))
                 }
             }
         }

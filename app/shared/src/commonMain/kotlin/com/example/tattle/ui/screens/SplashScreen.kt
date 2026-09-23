@@ -35,9 +35,14 @@ import com.example.tattle.auth.signInWithCode
 import com.example.tattle.auth.verifyPhoneNumber
 import com.example.tattle.auth.signInWithGoogle
 import com.example.tattle.data.LoginRepository
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.Brush
+import com.example.tattle.ui.components.Logo
 import com.example.tattle.ui.theme.LocalAppLanguage
 import com.example.tattle.ui.theme.LocalStrings
 import com.example.tattle.ui.theme.Primary
+import com.example.tattle.ui.theme.TextMuted
+import com.example.tattle.ui.theme.TextPrimary
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.providers.builtin.OTP
@@ -48,17 +53,27 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import tattle.app.shared.generated.resources.*
 
+import com.example.tattle.ui.theme.DarkBackground
+import com.example.tattle.ui.theme.DarkSurface
+import com.example.tattle.ui.theme.DarkTextMuted
+import com.example.tattle.ui.theme.DarkTextPrimary
+
 @Composable
-fun SplashScreen(onGetStarted: () -> Unit) {
+fun SplashScreen(
+    isDark: Boolean = false,
+    onGetStarted: () -> Unit
+) {
     var showGoogleLogin by remember { mutableStateOf(false) }
     var showPhoneLogin by remember { mutableStateOf(false) }
     var showEmailLogin by remember { mutableStateOf(false) }
     val language = LocalAppLanguage.current
 
+    val subTextColor = if (isDark) DarkTextMuted else Color.DarkGray
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(if (isDark) DarkBackground else Color.White),
         contentAlignment = Alignment.Center
     ) {
         // World Map Background
@@ -67,65 +82,136 @@ fun SplashScreen(onGetStarted: () -> Unit) {
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.FillWidth,
-            alpha = 0.7f
+            alpha = if (isDark) 0.15f else 0.7f
         )
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize().padding(24.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(24.dp)
         ) {
             Spacer(modifier = Modifier.weight(0.8f))
-            
+
+            // Logo Image
             Image(
                 painter = painterResource(Res.drawable.logo),
                 contentDescription = "Tattle Logo",
                 modifier = Modifier.fillMaxWidth(0.6f),
                 contentScale = ContentScale.Fit
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(
                 text = LocalStrings.get("your_neighborhood", language),
-                color = Color.DarkGray,
+                color = subTextColor,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.weight(1.2f))
-            
+
+            // Action Buttons
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                LoginButton(
-                    text = LocalStrings.get("continue_google", language),
-                    icon = { Icon(Icons.Default.Email, null, tint = Color.White, modifier = Modifier.padding(end = 8.dp)) },
-                    onClick = { showGoogleLogin = true }
-                )
-                
-                LoginButton(
-                    text = LocalStrings.get("continue_phone", language),
-                    icon = { Icon(Icons.Default.Phone, null, tint = Color.White, modifier = Modifier.padding(end = 8.dp)) },
-                    onClick = { showPhoneLogin = true }
-                )
-                
-                LoginButton(
-                    text = LocalStrings.get("continue_email", language),
-                    icon = null,
-                    onClick = { showEmailLogin = true }
-                )
+                // Google Login
+                Button(
+                    onClick = { showGoogleLogin = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(vertical = 2.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Primary,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(28.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.padding(end = 8.dp).size(20.dp)
+                        )
+                        Text(
+                            text = LocalStrings.get("continue_google", language),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = Color.White
+                        )
+                    }
+                }
+
+                // Phone Login
+                Button(
+                    onClick = { showPhoneLogin = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(vertical = 2.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Primary,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(28.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Phone,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.padding(end = 8.dp).size(20.dp)
+                        )
+                        Text(
+                            text = LocalStrings.get("continue_phone", language),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = Color.White
+                        )
+                    }
+                }
+
+                // Email Login
+                Button(
+                    onClick = { showEmailLogin = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(vertical = 2.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Primary,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(28.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                ) {
+                    Text(
+                        text = LocalStrings.get("continue_email", language),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = Color.White
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
                 text = LocalStrings.get("terms_service", language),
-                color = Color.LightGray,
+                color = if (isDark) DarkTextMuted else Color.Gray,
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
         }
 
@@ -346,7 +432,7 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
 
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         repeat(6) { index ->
                                             val char = otp.getOrNull(index)?.toString() ?: ""
@@ -354,7 +440,8 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                             
                                             Box(
                                                 modifier = Modifier
-                                                    .size(42.dp)
+                                                    .weight(1f)
+                                                    .height(48.dp)
                                                     .border(
                                                         width = 1.5.dp,
                                                         color = if (isFocused) Primary else Color(0xFFE8E8E8),
@@ -551,14 +638,26 @@ fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                     modifier = Modifier.focusRequester(focusRequester).size(1.dp).graphicsLayer { alpha = 0f }
                                 )
 
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
                                     repeat(6) { index ->
                                         val char = otp.getOrNull(index)?.toString() ?: ""
+                                        val isFocused = otp.length == index
                                         Box(
-                                            modifier = Modifier.size(42.dp).border(1.dp, Color(0xFFE8E8E8), RoundedCornerShape(8.dp)).background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp)),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(48.dp)
+                                                .border(
+                                                    width = 1.5.dp,
+                                                    color = if (isFocused) Primary else Color(0xFFE8E8E8),
+                                                    shape = RoundedCornerShape(10.dp)
+                                                )
+                                                .background(Color(0xFFF5F5F5), RoundedCornerShape(10.dp)),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Text(char, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                            Text(char, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                                         }
                                     }
                                 }
@@ -667,22 +766,4 @@ fun GoogleLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
             }
         }
     )
-}
-
-@Composable
-fun LoginButton(text: String, icon: (@Composable () -> Unit)?, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .padding(vertical = 4.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Primary),
-        shape = RoundedCornerShape(28.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            icon?.invoke()
-            Text(text, color = Color.White, fontWeight = FontWeight.SemiBold)
-        }
-    }
 }

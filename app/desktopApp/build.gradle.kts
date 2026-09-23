@@ -10,6 +10,11 @@ dependencies {
     implementation(projects.app.shared)
 
     implementation(compose.desktop.currentOs)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.ui)
+    implementation(libs.koin.core)
+    implementation(libs.koin.compose)
     implementation(libs.kotlinx.coroutinesSwing)
 
     implementation(libs.compose.uiToolingPreview)
@@ -17,7 +22,7 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "com.example.tattle.MainKt"
+        mainClass = "com.example.tattle.GenerateScreenshotsKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)

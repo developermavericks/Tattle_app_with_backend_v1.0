@@ -40,7 +40,7 @@ fun SkeletonCard(modifier: Modifier = Modifier) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.6f)
+                    .weight(1.35f)
                     .clip(RoundedCornerShape(24.dp))
                     .background(shimmerColor)
             )

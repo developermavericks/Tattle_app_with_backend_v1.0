@@ -3,6 +3,7 @@ package com.example.tattle.ui.screens
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,22 +18,34 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import io.kamel.image.KamelImage
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.painterResource
+import tattle.app.shared.generated.resources.*
 import com.example.tattle.data.ArticleRepository
+import com.example.tattle.data.ImageRepository
 import com.example.tattle.data.MockData
+import com.example.tattle.data.sortProcessedFirst
 import com.example.tattle.models.Article
 import com.example.tattle.models.UserPreferences
+import com.example.tattle.ui.components.AdWatchDialog
 import com.example.tattle.ui.components.ArticleCard
+import com.example.tattle.ui.components.CheckInChoiceDialog
 import com.example.tattle.ui.components.SurveyCard
 import com.example.tattle.ui.theme.*
 import com.example.tattle.utils.currentTimeMillis
 import org.koin.compose.koinInject
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
 @Composable
@@ -50,50 +63,83 @@ fun FeedScreen(
 ) {
     val language = LocalAppLanguage.current
     val articleRepository = koinInject<ArticleRepository>()
+    val imageRepository = koinInject<ImageRepository>()
     
     val userSectors = preferences.interests
     var currentIndex by remember(activeTab) { mutableStateOf(0) }
     var showSurvey by remember { mutableStateOf(false) }
+    var showCheckInChoice by remember { mutableStateOf(false) }
+    var showSurveyCard by remember { mutableStateOf(false) }
+    var showAdPlayer by remember { mutableStateOf(false) }
     var cardsSinceSurvey by remember { mutableStateOf(0) }
 
-    val tabsList = userSectors.ifEmpty { listOf("for_you") }
+    LaunchedEffect(showSurvey) {
+        if (showSurvey) {
+            showCheckInChoice = true
+        }
+    }
 
-    // Fetch dynamic articles
-    var dynamicArticles by remember { mutableStateOf<List<Article>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(false) }
-
-    LaunchedEffect(activeTab, preferences.bookmarks) {
-        isLoading = true
-        dynamicArticles = when (activeTab) {
+    // Instant 0ms seed initialization for immediate screen render
+    val initialSeed = remember(activeTab) {
+        when (activeTab) {
             "saved" -> articleRepository.getArticlesByIds(preferences.bookmarks)
+            "for_you" -> MockData.articles.sortProcessedFirst()
+            else -> MockData.getArticlesBySector(activeTab).sortProcessedFirst()
+        }
+    }
+    var dynamicArticles by remember(activeTab) { mutableStateOf(initialSeed) }
+    var seenArticleIds by remember(activeTab) { mutableStateOf(initialSeed.map { it.id }.toSet()) }
+
+    // Background sync: Updates feed with fresh remote articles from Ktor server
+    LaunchedEffect(activeTab, preferences.bookmarks) {
+        val remoteBatch = when (activeTab) {
+            "saved" -> articleRepository.getArticlesByIdsFromBackend(preferences.bookmarks)
             "for_you" -> articleRepository.getForYouArticles(userSectors)
             else -> articleRepository.getArticlesBySector(activeTab)
         }
-        isLoading = false
+
+        if (remoteBatch.isNotEmpty()) {
+            val sortedBatch = remoteBatch.distinctBy { it.id }.sortProcessedFirst()
+            dynamicArticles = sortedBatch
+            seenArticleIds = sortedBatch.map { it.id }.toSet()
+        }
     }
 
-    val filteredArticles = remember(activeTab, preferences.bookmarks, dynamicArticles) {
+    // Dynamic Endless 15-Card Buffer Polling: Triggers when remaining cards <= 10 to keep 15+ cards ahead
+    LaunchedEffect(currentIndex, dynamicArticles.size, activeTab) {
+        if (activeTab != "saved" && dynamicArticles.isNotEmpty() && (dynamicArticles.size - currentIndex <= 10)) {
+            val fetchedBatch = when (activeTab) {
+                "for_you" -> articleRepository.getForYouArticles(emptyList())
+                else -> articleRepository.getArticlesBySector("all")
+            }
+
+            val unseenNewCards = fetchedBatch.filter { !seenArticleIds.contains(it.id) }.sortProcessedFirst()
+            if (unseenNewCards.isNotEmpty()) {
+                dynamicArticles = dynamicArticles + unseenNewCards
+                seenArticleIds = seenArticleIds + unseenNewCards.map { it.id }
+            }
+        }
+    }
+
+    val filteredArticles = dynamicArticles
+    val currentArticle = filteredArticles.getOrNull(currentIndex)
+
+    // Pre-fetch & decode ImageBitmaps for next 15 articles in background for 0ms swiping latency
+    LaunchedEffect(dynamicArticles, currentIndex) {
         if (dynamicArticles.isNotEmpty()) {
-            dynamicArticles
-        } else {
-            val baseList = MockData.articles
-            when (activeTab) {
-                "saved" -> baseList.filter { preferences.bookmarks.contains(it.id) }
-                "for_you" -> baseList
-                else -> {
-                    val matching = baseList.filter { it.category.lowercase().contains(activeTab.lowercase()) }
-                    matching.ifEmpty { baseList }
+            val upcomingBatch = dynamicArticles.drop(currentIndex).take(15)
+            upcomingBatch.forEach { article ->
+                launch {
+                    imageRepository.getOrFetchBitmapForArticle(article)
                 }
             }
         }
     }
 
-    val currentArticle = filteredArticles.getOrNull(currentIndex)
-
     // Real-time Polling for Ollama content
     LaunchedEffect(currentArticle?.id) {
         val article = currentArticle ?: return@LaunchedEffect
-        if (article.hook.contains("processed by AI")) {
+        if (article.hook.contains("processed by AI", ignoreCase = true)) {
             while (true) {
                 delay(10000)
                 val updatedArticle = articleRepository.pollArticleUpdate(activeTab, article.id)
@@ -109,22 +155,18 @@ fun FeedScreen(
 
     val nowMillis = currentTimeMillis()
     val isLockedOut = preferences.lockoutUntil != null && preferences.lockoutUntil > nowMillis
+    val isDark = preferences.isDarkMode
+    val bgColor = if (isDark) DarkBackground else Color.White
 
     Scaffold(
-        containerColor = Color.White,
+        containerColor = bgColor,
         topBar = {
-            Column(modifier = Modifier.background(Color.White)) {
+            Column(modifier = Modifier.background(bgColor)) {
                 FeedHeader(
                     preferences = preferences,
                     language = language,
-                    onOpenSettings = onOpenSettings,
-                    onOpenRecap = onSessionEnd
-                )
-                TabsRow(
-                    tabs = tabsList,
-                    activeTab = activeTab,
-                    language = language,
-                    onTabSelected = onTabSelected
+                    onOpenSettings = { onOpenSettings() },
+                    onOpenRecap = { onSessionEnd() }
                 )
                 ProgressLine(
                     progress = if (filteredArticles.isNotEmpty()) (currentIndex + 1).toFloat() / filteredArticles.size else 0f
@@ -138,55 +180,75 @@ fun FeedScreen(
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
-            if (isOffline) {
-                OfflineBanner(language = language, modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp))
-            }
-
             if (isLockedOut) {
-                // Lockout Card
                 LockoutScreen(
                     lockoutUntil = preferences.lockoutUntil!!,
-                    onUnlockViaSurvey = { showSurvey = true },
+                    onUnlockViaSurvey = {
+                        showSurvey = true
+                        showCheckInChoice = true
+                    },
                     modifier = Modifier.padding(24.dp)
                 )
-            } else if (isLoading) {
-                CircularProgressIndicator(color = Primary)
-            } else if (showSurvey) {
-                SurveyCard(
-                    survey = MockData.surveys[0],
-                    onComplete = {
-                        showSurvey = false
-                        onUpdatePreferences(preferences.copy(lockoutUntil = null, adFreeUntil = "AdFree"))
-                        proceedNext(
-                            currentIndex,
-                            filteredArticles.size,
-                            { currentIndex = it },
-                            { cardsSinceSurvey = it },
-                            cardsSinceSurvey,
-                            { showSurvey = it },
-                            preferences
-                        )
+            } else if (showCheckInChoice) {
+                CheckInChoiceDialog(
+                    onSelectWatchAd = {
+                        showCheckInChoice = false
+                        showAdPlayer = true
                     },
-                    onSkip = {
-                        showSurvey = false
-                        val lockoutTime = currentTimeMillis() + (3 * 3600 * 1000)
-                        onUpdatePreferences(preferences.copy(lockoutUntil = lockoutTime))
+                    onSelectTakeSurvey = {
+                        showCheckInChoice = false
+                        showSurveyCard = true
                     },
-                    onWatchAd = {
-                        showSurvey = false
-                        onUpdatePreferences(preferences.copy(lockoutUntil = null, adFreeUntil = "AdFree"))
-                        proceedNext(
-                            currentIndex,
-                            filteredArticles.size,
-                            { currentIndex = it },
-                            { cardsSinceSurvey = it },
-                            cardsSinceSurvey,
-                            { showSurvey = it },
-                            preferences
-                        )
-                    },
-                    modifier = Modifier.padding(horizontal = 24.dp)
+                    isDark = isDark
                 )
+            } else if (showAdPlayer) {
+                AdWatchDialog(
+                    onAdCompleted = {
+                        showAdPlayer = false
+                        showSurvey = false
+                        val passExpiry = (currentTimeMillis() + 3600 * 1000L).toString()
+                        onUpdatePreferences(preferences.copy(lockoutUntil = null, adFreeUntil = passExpiry))
+                        proceedNext(
+                            currentIndex,
+                            filteredArticles.size,
+                            { currentIndex = it },
+                            { cardsSinceSurvey = it },
+                            cardsSinceSurvey,
+                            { showSurvey = it },
+                            preferences
+                        )
+                    },
+                    onDismiss = {
+                        showAdPlayer = false
+                        showCheckInChoice = true
+                    }
+                )
+            } else if (showSurveyCard) {
+                Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
+                    SurveyCard(
+                        survey = MockData.surveys.first(),
+                        onComplete = {
+                            showSurveyCard = false
+                            showSurvey = false
+                            val passExpiry = (currentTimeMillis() + 3600 * 1000L).toString()
+                            onUpdatePreferences(preferences.copy(lockoutUntil = null, adFreeUntil = passExpiry))
+                            proceedNext(
+                                currentIndex,
+                                filteredArticles.size,
+                                { currentIndex = it },
+                                { cardsSinceSurvey = it },
+                                cardsSinceSurvey,
+                                { showSurvey = it },
+                                preferences
+                            )
+                        },
+                        onSkip = {
+                            showSurveyCard = false
+                            showCheckInChoice = true
+                        },
+                        isDark = isDark
+                    )
+                }
             } else if (currentArticle == null) {
                 EmptyState(activeTab, language) { onTabSelected("for_you") }
             } else {
@@ -238,12 +300,7 @@ fun FeedScreen(
                                 } else {
                                     preferences.readHistory
                                 }
-                                onUpdatePreferences(
-                                    preferences.copy(
-                                        readHistory = history,
-                                        totalCardsRead = preferences.totalCardsRead + 1
-                                    )
-                                )
+                                onUpdatePreferences(preferences.copy(readHistory = history))
                                 proceedNext(
                                     currentIndex,
                                     filteredArticles.size,
@@ -254,18 +311,25 @@ fun FeedScreen(
                                     preferences
                                 )
                             },
-                            onReaction = { emoji ->
-                                val newReactions = preferences.reactions + (targetArticle.id to emoji)
+                            onSwipeUp = {
+                                proceedNext(
+                                    currentIndex,
+                                    filteredArticles.size,
+                                    { currentIndex = it },
+                                    { cardsSinceSurvey = it },
+                                    cardsSinceSurvey,
+                                    { showSurvey = it },
+                                    preferences
+                                )
+                            },
+                            onReaction = { reaction ->
+                                val newReactions = preferences.reactions.toMutableMap()
+                                newReactions[targetArticle.id] = reaction
                                 onUpdatePreferences(preferences.copy(reactions = newReactions))
                             },
-                            onImageLoaded = { url ->
-                                if (dynamicArticles.any { it.id == targetArticle.id }) {
-                                    dynamicArticles = dynamicArticles.map {
-                                        if (it.id == targetArticle.id) it.copy(imageUrl = url) else it
-                                    }
-                                }
-                            },
+                            onImageLoaded = { },
                             currentReaction = preferences.reactions[targetArticle.id],
+                            isDark = isDark,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -285,15 +349,17 @@ private fun proceedNext(
     preferences: UserPreferences
 ) {
     val nextCardsCount = cardsSinceSurvey + 1
-    if (nextCardsCount >= 5 && preferences.adFreeUntil == null) {
+    val now = currentTimeMillis()
+    val adFreeUntilTime = preferences.adFreeUntil?.toLongOrNull() ?: 0L
+    val is1HourPassActive = preferences.adFreeUntil == "AdFree" || adFreeUntilTime > now
+
+    if (nextCardsCount >= 5 && !is1HourPassActive) {
         onShowSurvey(true)
         onSurveyCountUpdate(0)
     } else {
         onSurveyCountUpdate(nextCardsCount)
         if (currentIndex < listSize - 1) {
             onIndexUpdate(currentIndex + 1)
-        } else {
-            onIndexUpdate(0)
         }
     }
 }
@@ -310,14 +376,14 @@ fun LockoutScreen(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(32.dp),
+            modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -367,6 +433,7 @@ fun FeedHeader(
     onOpenSettings: () -> Unit,
     onOpenRecap: () -> Unit
 ) {
+    val isDark = preferences.isDarkMode
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -375,11 +442,12 @@ fun FeedHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = LocalStrings.get("app_name", language),
-                color = Color.Black,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
+            Image(
+                painter = painterResource(Res.drawable.logo),
+                contentDescription = "Tattle Logo",
+                modifier = Modifier.height(36.dp),
+                contentScale = ContentScale.Fit,
+                colorFilter = ColorFilter.tint(if (isDark) DarkTextPrimary else Color.Black)
             )
         }
 
@@ -401,14 +469,19 @@ fun FeedHeader(
                 }
             }
 
-            if (preferences.adFreeUntil != null) {
+            val now = currentTimeMillis()
+            val adFreeUntilTime = preferences.adFreeUntil?.toLongOrNull() ?: 0L
+            val is1HourPassActive = preferences.adFreeUntil == "AdFree" || adFreeUntilTime > now
+
+            if (is1HourPassActive) {
                 Box(
                     modifier = Modifier
-                        .background(Primary.copy(alpha = 0.1f), RoundedCornerShape(50))
+                        .background(Primary.copy(alpha = 0.12f), RoundedCornerShape(50))
+                        .border(1.dp, Primary.copy(alpha = 0.3f), RoundedCornerShape(50))
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = LocalStrings.get("ad_free", language),
+                        text = "⚡ 1-Hour Pass",
                         color = Primary,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
@@ -416,40 +489,7 @@ fun FeedHeader(
                 }
             }
             IconButton(onClick = onOpenSettings) {
-                Icon(Icons.Default.Settings, null, tint = Color.Black)
-            }
-        }
-    }
-}
-
-@Composable
-fun TabsRow(tabs: List<String>, activeTab: String, language: String, onTabSelected: (String) -> Unit) {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.padding(bottom = 16.dp)
-    ) {
-        items(tabs) { tabKey ->
-            val isActive = tabKey == activeTab
-            val displayName = try {
-                LocalStrings.get(tabKey, language)
-            } catch (e: Exception) {
-                tabKey.replaceFirstChar { it.uppercase() }
-            }
-            
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isActive) Primary else Color(0xFFF5F5F5))
-                    .clickable { onTabSelected(tabKey) }
-                    .padding(horizontal = 20.dp, vertical = 10.dp)
-            ) {
-                Text(
-                    text = displayName,
-                    color = if (isActive) Color.White else Color.Black,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Icon(Icons.Default.Settings, null, tint = if (isDark) DarkTextPrimary else Color.Black)
             }
         }
     }
@@ -457,55 +497,30 @@ fun TabsRow(tabs: List<String>, activeTab: String, language: String, onTabSelect
 
 @Composable
 fun ProgressLine(progress: Float) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(2.dp)
-            .background(Color.Black.copy(alpha = 0.05f))
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .fillMaxWidth(progress)
-                .background(Primary)
-        )
-    }
+    LinearProgressIndicator(
+        progress = { progress },
+        modifier = Modifier.fillMaxWidth().height(2.dp),
+        color = Primary,
+        trackColor = Color.Transparent
+    )
 }
 
 @Composable
-fun OfflineBanner(language: String, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .background(Surface.copy(alpha = 0.9f), RoundedCornerShape(50))
-            .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(50))
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(modifier = Modifier.size(6.dp).background(TextMuted, CircleShape))
-            Text(text = LocalStrings.get("offline_msg", language), color = TextMuted, fontSize = 11.sp)
-        }
-    }
-}
-
-@Composable
-fun EmptyState(activeTab: String, language: String, onBrowse: () -> Unit) {
+fun EmptyState(activeTab: String, language: String, onReset: () -> Unit) {
     Column(
         modifier = Modifier.padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Icon(Icons.Default.Bolt, null, tint = TextMuted, modifier = Modifier.size(40.dp))
-        Text(text = LocalStrings.get("deck_empty", language), color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+        Icon(Icons.Default.Inbox, null, tint = TextMuted, modifier = Modifier.size(48.dp))
         Text(
-            text = if (activeTab == "saved") LocalStrings.get("no_bookmarks", language) else LocalStrings.get("new_stories_later", language),
-            color = TextMuted,
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center
+            text = "All caught up on $activeTab!",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
         )
-        if (activeTab == "saved") {
-            TextButton(onClick = onBrowse) {
-                Text(text = LocalStrings.get("browse_feed", language), color = Primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-            }
+        Button(onClick = onReset, colors = ButtonDefaults.buttonColors(containerColor = Primary)) {
+            Text("Back to For You Feed")
         }
     }
 }

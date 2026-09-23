@@ -8,7 +8,7 @@ object MockData {
     val articles = listOf(
         Article(
             id = "1",
-            category = "Tech & AI",
+            category = "AI & Robotics",
             readTime = "30s read",
             headline = "Neon Exodus: City Grid 7 Faces Massive System Blackout",
             hook = "Technicians report a localized power failure in the cyber-district, affecting over 2 million residents. Grid authorities suspect a coordinated digital breach.",
@@ -34,35 +34,12 @@ The incident is a stark reminder that as we accelerate into direct-to-brain inte
             likes = 1200,
             commentsCount = 482,
             isBreaking = true,
-            views = 4500,
+            views = 9500,
             language = "English"
         ),
         Article(
-            id = "hi-1",
-            category = "टेक और AI",
-            readTime = "30 सेकंड का पाठ",
-            headline = "नियॉन एक्सोडस: सिटी ग्रिड 7 में भारी सिस्टम ब्लैकआउट",
-            hook = "तकनीशियनों ने साइबर-डिस्ट्रिक्ट में स्थानीय बिजली विफलता की सूचना दी है, जिससे 20 लाख से अधिक निवासी प्रभावित हुए हैं। ग्रिड अधिकारियों को एक समन्वित डिजिटल सेंधमारी का संदेह है।",
-            brief = "एक भारी बिजली विफलता ने सिटी ग्रिड 7 को पूर्ण अंधेरे में धकेल दिया है। तकनीशियन प्राथमिक सबस्टेशन के फर्मवेयर में पाए गए एक दुष्ट वर्म को अलग करने की कोशिश कर रहे हैं। अधिकारी निवासियों से संचार के लिए ऑफ-ग्रिड स्थानीयकृत मेश सेल पर भरोसा करने का आग्रह कर रहे हैं।",
-            bullets = listOf(
-                "20 लाख से अधिक निवासी पूरी तरह अंधेरे में हैं, सभी पारगमन और वाणिज्य लाइनें ऑफलाइन हैं।",
-                "साइबर-सुरक्षा टास्क फोर्स ने पुनर्नवीनीकरण हार्डवेयर तत्वों का उपयोग करके एक समन्वित डिजिटल सेंधमारी को चिह्नित किया है।",
-                "आपातकालीन लाइनों के बंद होने के कारण ऑफ-ग्रिड स्थानीयकृत मेश नेटवर्क पर रिकॉर्ड-उच्च ट्रैफ़िक देखा जा रहा है।"
-            ),
-            whyItMatters = "यह केवल बुनियादी ढांचे की विफलता नहीं है; यह आधुनिक ग्रिड युद्ध का एक जीवंत प्रदर्शन है। यदि स्थानीयकृत स्मार्ट सबस्टेशन नियंत्रण पुनर्नवीनीकरण हार्डवेयर कारनामों के प्रति संवेदनशील हैं, तो प्रत्येक उच्च-घनत्व वाला महानगरीय क्षेत्र सक्रिय रूप से एक टिक-टिक करती घड़ी पर बैठा है।",
-            fullText = "हिंदी में पूरा लेख यहाँ...",
-            publisher = "टैटल रिपोर्ट्स",
-            publishedAt = "2 घंटे पहले",
-            imageUrl = "https://picsum.photos/seed/tattle_hi/800/1000",
-            likes = 1100,
-            commentsCount = 200,
-            isBreaking = true,
-            views = 3000,
-            language = "Hindi"
-        ),
-        Article(
             id = "2",
-            category = "Future Tech",
+            category = "Tech",
             readTime = "6 min read",
             headline = "The Silent Rise of Neural-Mesh Networks in Urban Grids",
             hook = "While telecom giants push expensive premium licenses, a grassroots community of hackers is weaving a completely free, sovereign internet using cheap radio nodes.",
@@ -72,130 +49,426 @@ The incident is a stark reminder that as we accelerate into direct-to-brain inte
                 "Data is split across multiple pathways, making surveillance impossible.",
                 "Over 45,000 active devices are online across Tokyo and Berlin."
             ),
-            whyItMatters = "Neural-mesh networks represent a technological reclamation of sovereignty.",
-            fullText = """While the world's largest telecommunications conglomerates argue...""",
+            whyItMatters = "Neural-mesh networks represent a technological reclamation of sovereignty and peer-to-peer resilience.",
+            fullText = """While the world's largest telecommunications conglomerates argue over spectral bandwidth auctions, a decentralized network revolution is silently unfolding beneath the radar. Across Tokyo, Berlin, and San Francisco, open-source mesh relays are stitching together a parallel communications infrastructure.
+
+Operating on license-free 915MHz and 2.4GHz frequencies, these low-power solar nodes form a resilient lattice. Even if central ISP backbones are severed or throttled, mesh packets dynamically reroute around dead zones in milliseconds.
+
+"This is fundamentally un-censorable infrastructure," says lead developer Mira Chen. "You cannot turn off an internet that lives on thousands of rooftop solar bricks."
+
+As privacy concerns escalate worldwide, community-managed mesh grids offer citizens an uncompromised medium for real-time local discourse and emergency response.""",
             publisher = "Tattle Reports",
             publishedAt = "3h ago",
             imageUrl = "https://picsum.photos/seed/tattle2/800/1000",
             likes = 1540,
             commentsCount = 312,
             isBreaking = false,
-            views = 3200,
+            views = 8200,
             language = "English"
-        ),
-        Article(
-            id = "hi-2",
-            category = "भविष्य की तकनीक",
-            readTime = "6 मिनट का पाठ",
-            headline = "शहरी ग्रिडों में न्यूरल-मेश नेटवर्क का मौन उदय",
-            hook = "जबकि टेलीकॉम दिग्गज महंगे प्रीमियम लाइसेंस बेच रहे हैं, हैकर्स का एक जमीनी समुदाय सस्ते रेडियो नोड्स का उपयोग करके पूरी तरह से मुफ्त, संप्रभु इंटरनेट बुन रहा है।",
-            brief = "विकेंद्रीकृत मेश नेटवर्क प्रमुख वैश्विक महानगरों में चुपचाप फैल रहे हैं, जो कॉर्पोरेट-निगरानी वाले इंटरनेट मार्गों का एक सुरक्षित विकल्प प्रदान करते हैं।",
-            bullets = listOf(
-                "सौर नोड्स एक स्व-चिकित्सा, पीयर-टू-पीयर डेटा वेब बनाते हैं।",
-                "डेटा कई मार्गों में विभाजित है, जिससे निगरानी असंभव हो जाती है।",
-                "टोक्यो और बर्लिन में 45,000 से अधिक सक्रिय डिवाइस ऑनलाइन हैं।"
-            ),
-            whyItMatters = "न्यूरल-मेश नेटवर्क संप्रभुता के तकनीकी सुधार का प्रतिनिधित्व करते हैं।",
-            fullText = "हिंदी में पूरा लेख यहाँ...",
-            publisher = "टैटल रिपोर्ट्स",
-            publishedAt = "3 घंटे पहले",
-            imageUrl = "https://picsum.photos/seed/tattle_hi2/800/1000",
-            likes = 1400,
-            commentsCount = 250,
-            isBreaking = false,
-            views = 2800,
-            language = "Hindi"
         ),
         Article(
             id = "3",
             category = "Pop Culture",
             readTime = "4 min read",
-            headline = "Virtual Collective: The underground scene of digital nomads",
-            hook = "Bypassing conventional residency laws, a new nomadic generation is establishing virtual micronations.",
-            brief = "A new wave of decentralized digital nomads are abandoning geographical citizenship.",
+            headline = "Virtual Collective: The Underground Scene of Digital Nomads",
+            hook = "Bypassing conventional residency laws, a new nomadic generation is establishing virtual micronations governed by smart contracts.",
+            brief = "A new wave of decentralized digital nomads are abandoning geographical citizenship in favor of autonomous online collectives.",
             bullets = listOf(
-                "Members pool income into shared smart contracts.",
-                "Collective members share living spaces and travel dynamically.",
-                "Highly skilled digital labor relocates out of reach of traditional states."
+                "Members pool income into shared smart contracts for global housing hubs.",
+                "Collective members share physical living spaces and travel dynamically.",
+                "Highly skilled digital labor relocates out of reach of traditional state bureaucracies."
             ),
-            whyItMatters = "Gen Z is actively inventing a post-national way of living.",
-            fullText = """The traditional concept of a 'nation' is built on dirt...""",
+            whyItMatters = "Gen Z and millennial remote workers are actively inventing a post-national, borderless way of living and working.",
+            fullText = """The traditional concept of a nation-state is anchored in physical soil, but the rising generation belongs to the cloud. Over the past three years, cloud-first collectives have purchased real estate in Portugal, Bali, and Costa Rica.
+
+Instead of traditional mortgages or leases, governance is handled via on-chain quadratic voting. Members contribute a fixed percentage of remote earnings into a shared treasury, which finances coliving compounds, starlink connectivity, and organic farming collectives.
+
+Sociologists term this 'sovereign nomadism'—a paradigm shift where community ties and legal identity reside on immutable decentralized ledgers rather than passport offices.""",
             publisher = "Creator Lab",
             publishedAt = "5h ago",
             imageUrl = "https://picsum.photos/seed/tattle3/800/1000",
             likes = 980,
             commentsCount = 198,
             isBreaking = false,
-            views = 2100,
+            views = 6100,
             language = "English"
         ),
         Article(
             id = "4",
-            category = "Politics",
+            category = "World News",
             readTime = "30s read",
-            headline = "Decentralized Voting: Trial runs show surprising results",
-            hook = "A modern district-level voting trial using ledger-verified tokens recorded over 94% participation among youth.",
-            brief = "A pilot program for localized cryptographically secure voting has successfully concluded.",
+            headline = "Decentralized Voting: Global Trial Runs Show Surprising Youth Turnout",
+            hook = "A modern district-level voting trial using ledger-verified tokens recorded over 94% participation among youth voters.",
+            brief = "A pilot program for localized cryptographically secure voting has successfully concluded across 12 municipal regions.",
             bullets = listOf(
-                "Youth voter participation spiked to 94.2%.",
-                "Results were compiled and verified within 4 minutes.",
-                "Public support is massive despite traditional party questions."
+                "Youth voter participation spiked to 94.2%, up from 22% in traditional elections.",
+                "Results were compiled and verified within 4 minutes with zero tampering flagged.",
+                "Public support is massive despite skepticism from traditional political parties."
             ),
-            whyItMatters = "When you make voting fast and secure, the political landscape shifts instantaneously.",
-            fullText = """For decades, political scientists have repeated...""",
+            whyItMatters = "When voting is friction-free, instantaneous, and verifiably transparent, political engagement undergoes a radical transformation.",
+            fullText = """For decades, low youth voter turnout was treated as an inevitable civic apathy. However, pilot trials conducted in Zurich, Seoul, and Austin have thoroughly debunked that assumption.
+
+By replacing paper ballots and inconvenient polling locations with zero-knowledge mobile voter passes, voting took less than 15 seconds per citizen. The cryptographic protocol allowed voters to verify their ballot was counted correctly without revealing their individual choice.
+
+Municipal leaders are now drafting legislation to expand tokenized voting to municipal budget allocations next quarter.""",
             publisher = "CivicTech Monthly",
             publishedAt = "8h ago",
             imageUrl = "https://picsum.photos/seed/tattle4/800/1000",
             likes = 2120,
             commentsCount = 654,
             isBreaking = false,
-            views = 6700,
+            views = 11400,
             language = "English"
         ),
         Article(
             id = "5",
-            category = "Tech & AI",
+            category = "AI & Robotics",
             readTime = "5 min read",
             headline = "Global Semiconductor Shortage Hits Critical Infrastructure",
-            hook = "The semiconductor supply chain crisis has escalated, impacting metropolitan energy grids.",
-            brief = "High-density urban energy grids are experiencing implementation lags due to microcontroller delays.",
+            hook = "The semiconductor supply chain crisis has escalated, impacting metropolitan energy grids and autonomous transit networks.",
+            brief = "High-density urban energy grids are experiencing implementation lags due to microcontroller chip delays worldwide.",
             bullets = listOf(
-                "Implementations are stalled until Q3 2025.",
-                "Secondary market pricing for legacy controllers spiked 400%.",
+                "Smart grid upgrades stall until Q3 2025 across Europe and North America.",
+                "Secondary market pricing for legacy controllers spiked 400% in weeks.",
                 "Recycled chips increase the attack surface for hardware exploits."
             ),
-            whyItMatters = "When fundamental infrastructure can't access hardware, societal stability becomes a variable.",
-            fullText = """The ongoing semiconductor supply chain crisis...""",
+            whyItMatters = "When fundamental infrastructure cannot access hardware, societal stability becomes an unpredictable variable.",
+            fullText = """The global silicon chokehold has reached a critical juncture. What began as consumer electronics delays has spilled over into essential public utilities. Power distribution grids, clean water processing facilities, and automated light rail lines are facing severe hardware shortfalls.
+
+Factory backlogs for industrial-grade 28nm microcontrollers now exceed 18 months. Energy providers have been forced to rely on refurbished secondary market components, raising concerns among cybersecurity experts.
+
+"Hardware authenticity is the foundation of trust," warns supply chain researcher Dr. Elena Rostova. "When utilities buy unverified surplus chips, backdoor vulnerabilities become almost unavoidable."""",
             publisher = "Tattle Reports",
             publishedAt = "12h ago",
-            imageUrl = "https://picsum.photos/seed/tattle5/800/1000",
+            imageUrl = "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
             likes = 3410,
             commentsCount = 912,
             isBreaking = true,
-            views = 9400,
+            views = 14200,
             language = "English"
         ),
         Article(
             id = "6",
-            category = "Tech & AI",
+            category = "Science & Space",
             readTime = "4 min read",
-            headline = "Neural Linkage: The Ethics of Direct-to-Brain Computing",
-            hook = "As consumer neural implants pass clinical trials, how do you keep thoughts private?",
-            brief = "Neural connection implants are transitioning from labs to mainstream pre-orders.",
+            headline = "Lunar Outpost Alpha Reports Stable Oxygen Harvest from Regolith",
+            hook = "Lunar surface reactors successfully extract breathable oxygen directly from moon soil, paving the way for permanent human habitation.",
+            brief = "Scientists at Lunar Outpost Alpha have achieved a continuous 90-day closed-loop oxygen synthesis milestone.",
             bullets = listOf(
-                "Pre-orders for reading-headbands exceeded 500,000 units.",
-                "No direct laws exist to prevent aggregating focus metrics.",
-                "Hacker groups are designing local hardware-kill switches."
+                "Thermovacuum reactors process 10kg of regolith per hour into pure oxygen.",
+                "Byproduct metallic titanium and silicon are harvested for 3D construction.",
+                "First commercial lunar supply mission scheduled for late 2026."
             ),
-            whyItMatters = "We must establish neural-rights frameworks before the tech becomes default.",
-            fullText = """The ultimate frontier isn't space...""",
-            publisher = "NeuroTech Daily",
+            whyItMatters = "In-situ resource utilization eliminates the exorbitant cost of launching life support consumables from Earth.",
+            fullText = """Humanity's permanent presence on the Moon just took a giant leap forward. The International Lunar Research Station has confirmed that molten salt electrolysis units have been continuously generating oxygen from regolith for three full months.
+
+The breakthrough removes the primary bottleneck for off-world bases: the weight penalty of hauling oxygen rockets out of Earth's gravity well.
+
+With breathable air secured on-site, lunar crews can now focus on expanding subterranean habitat tubes and assembling deep space transport vessels in lunar orbit.""",
+            publisher = "AstroScience Journal",
             publishedAt = "1d ago",
             imageUrl = "https://picsum.photos/seed/tattle6/800/1000",
-            likes = 870,
-            commentsCount = 142,
+            likes = 1890,
+            commentsCount = 340,
             isBreaking = false,
-            views = 1800,
+            views = 7800,
+            language = "English"
+        ),
+        Article(
+            id = "7",
+            category = "Business & Money",
+            readTime = "3 min read",
+            headline = "Autonomous Algorithmic Trading Hits 60% of Global Capital Markets",
+            hook = "AI agents now execute the majority of high-frequency trades, reshaping financial liquidity and market volatility.",
+            brief = "Autonomous neural models are making multi-billion-dollar allocation decisions in microseconds across global exchanges.",
+            bullets = listOf(
+                "AI-driven trades account for $4.2 Trillion in daily volume.",
+                "Human market makers fall below 15% total order flow participation.",
+                "Regulators mandate real-time circuit breakers for autonomous agent clusters."
+            ),
+            whyItMatters = "Financial markets are evolving into automated machine-to-machine ecosystems where human reaction times are obsolete.",
+            fullText = """Wall Street's trading floors were already quiet, but today they are completely automated. Autonomous portfolio algorithms trained on multi-modal economic data now control over 60% of all public equity and currency trades.
+
+These agents analyze central bank statements, satellite imagery of shipping ports, and consumer transaction feeds in real-time, executing rebalancing moves faster than light can travel across transatlantic fiber cables.
+
+While market efficiency has reached unprecedented levels, central bankers warn that machine herd behavior could trigger flash crashes if models share correlated bias loops.""",
+            publisher = "FinTech Dispatch",
+            publishedAt = "4h ago",
+            imageUrl = "https://picsum.photos/seed/tattle7/800/1000",
+            likes = 2450,
+            commentsCount = 512,
+            isBreaking = false,
+            views = 10300,
+            language = "English"
+        ),
+        Article(
+            id = "8",
+            category = "Climate & Environment",
+            readTime = "4 min read",
+            headline = "Next-Gen Perovskite Solar Cells Achieve 35% Efficiency Record",
+            hook = "Tandem solar technology shatters previous limits, paving the way for ultra-cheap clean energy across urban facades.",
+            brief = "Laboratory breakthroughs in flexible tandem perovskite cells promise to double solar output per square meter.",
+            bullets = listOf(
+                "Efficiency jumps from 22% to 35.4% in certified lab tests.",
+                "Flexible thin-film design allows application directly onto skyscraper glass.",
+                "Commercial manufacturing scaled for mass distribution by early 2026."
+            ),
+            whyItMatters = "Doubling solar efficiency converts every window and rooftop into a high-yield power plant.",
+            fullText = """Solar energy adoption is about to experience an exponential curve. Engineers at the Renewable Energy Institute have solved the long-standing stability challenge of perovskite-silicon tandem cells.
+
+Unlike rigid silicon panels, these thin films can be sprayed directly onto architectural glass, vehicle roofs, and smart clothing fabrics.
+
+The breakthrough reduces the payback period for commercial solar installations to under two years, accelerating the phase-out of fossil fuel peaking plants.""",
+            publisher = "EcoTech World",
+            publishedAt = "6h ago",
+            imageUrl = "https://picsum.photos/seed/tattle8/800/1000",
+            likes = 1320,
+            commentsCount = 210,
+            isBreaking = false,
+            views = 5400,
+            language = "English"
+        ),
+        Article(
+            id = "9",
+            category = "Gaming",
+            readTime = "5 min read",
+            headline = "Generative Neural Engines Enable Infinite-World Indie Game Devs",
+            hook = "Solo game creators are releasing photorealistic, procedural open-world universes powered by localized neural renderers.",
+            brief = "AI game generation engines allow small 2-person studios to compete directly with AAA budget blockbusters.",
+            bullets = listOf(
+                "Real-time procedural physics and NPC dialogue synthesized on consumer GPUs.",
+                "Indie titles top global download charts with zero publisher backing.",
+                "Traditional $200M game budgets face massive market disruption."
+            ),
+            whyItMatters = "Democratized game development tools are shifting creative power back to independent artists.",
+            fullText = """The gaming industry is undergoing its biggest structural shift since the 3D graphics revolution. Generative asset pipelines and neural behavior models mean a duo working from a garage can craft sprawling, living worlds that rival multi-hundred-million-dollar AAA releases.
+
+NPCs respond dynamically with persistent memory, full voice acting, and contextual decision-making. Players no longer follow scripted paths; every playthrough generates a completely unique narrative arc.
+
+"We are entering the golden age of interactive storytelling," says indie creator Liam Vance. "The friction between imagination and code has vanished."""",
+            publisher = "GameDev Weekly",
+            publishedAt = "7h ago",
+            imageUrl = "https://picsum.photos/seed/tattle9/800/1000",
+            likes = 2100,
+            commentsCount = 430,
+            isBreaking = false,
+            views = 8900,
+            language = "English"
+        ),
+        Article(
+            id = "10",
+            category = "Entertainment",
+            readTime = "4 min read",
+            headline = "Decentralized Streaming Protocols Disrupt Legacy Hollywood Model",
+            hook = "Peer-to-peer video streaming networks allow filmmakers to monetize directly with audiences without studio middlemen.",
+            brief = "Independent filmmakers are funding, distributing, and monetizing feature films directly through decentralized content nodes.",
+            bullets = listOf(
+                "Filmmakers retain 95% of box office and streaming revenues.",
+                "Tokenized micro-patronage allows fans to earn passive royalties.",
+                "Legacy streaming platforms see subscriber drops as community hubs grow."
+            ),
+            whyItMatters = "Direct creator-to-audience rails eliminate studio gatekeepers and corporate censorship.",
+            fullText = """Hollywood studio executives are watching their distribution moat dissolve. Decentralized streaming protocols leveraging WebTorrent and smart contract royalties are enabling filmmakers to premiere films globally with zero middleman take-rates.
+
+Audience members stake tokens to stream 4K content directly from decentralized node operators, while smart contracts automatically split revenue between actors, directors, and early backers instantly.
+
+The model ensures niche art films and daring documentaries find immediate financial viability.""",
+            publisher = "Cinema Today",
+            publishedAt = "10h ago",
+            imageUrl = "https://picsum.photos/seed/tattle10/800/1000",
+            likes = 1150,
+            commentsCount = 180,
+            isBreaking = false,
+            views = 4700,
+            language = "English"
+        ),
+        Article(
+            id = "11",
+            category = "Startups",
+            readTime = "3 min read",
+            headline = "Micro-SaaS Renaissance: Solo Founders Leverage Local LLM Fleets",
+            hook = "One-person companies are hitting $1M ARR in record time by automating operations with specialized AI agents.",
+            brief = "Bootstrapped solo founders are outcompeting 50-person venture-backed teams using autonomous agentic workflows.",
+            bullets = listOf(
+                "Average time to profitability for solo startups drops to under 30 days.",
+                "Local open-weights LLMs handle customer support, QA, and billing autonomously.",
+                "Venture capital funds shift focus toward lean single-operator portfolios."
+            ),
+            whyItMatters = "Capital efficiency is reaching extreme levels as software creation and operations become friction-free.",
+            fullText = """The era of massive venture capital burn rates may be coming to an end. A growing movement of 'Micro-SaaS' founders are building high-margin software products with zero employees.
+
+By deploying fleets of open-source AI agents running on private cloud servers, solo developers handle code maintenance, customer success, marketing campaigns, and compliance.
+
+Investors are taking notice: capital efficiency and cash flow are once again king in the tech ecosystem.""",
+            publisher = "Founder Circle",
+            publishedAt = "1d ago",
+            imageUrl = "https://picsum.photos/seed/tattle11/800/1000",
+            likes = 1980,
+            commentsCount = 310,
+            isBreaking = false,
+            views = 9100,
+            language = "English"
+        ),
+        Article(
+            id = "12",
+            category = "Healthcare",
+            readTime = "5 min read",
+            headline = "Personalized mRNA Therapies Enter Phase III Trial for Pancreatic Cancer",
+            hook = "Customized cancer vaccines engineered in 48 hours show unprecedented remissions in clinical trials.",
+            brief = "Next-generation genomic sequencing enables rapid synthesis of individualized mRNA treatments targeting tumor mutations.",
+            bullets = listOf(
+                "88% disease-free survival rate recorded across 500 trial participants.",
+                "Vaccines are custom-synthesized within two days of biopsy extraction.",
+                "FDA grants accelerated breakthrough designation for general oncology deployment."
+            ),
+            whyItMatters = "Oncology is transitioning from generalized chemotherapy to surgical, patient-specific immunotherapy.",
+            fullText = """In what oncologists are calling a landmark medical triumph, personalized mRNA cancer vaccines have achieved unprecedented efficacy in Phase III clinical trials.
+
+By sequencing a patient's tumor genome upon biopsy, AI algorithms identify unique neoantigens and generate a tailored mRNA strand within 48 hours.
+
+When administered, the patient's immune system trains specifically on those tumor markers, eradicating micro-metastases without damaging healthy organ tissue.""",
+            publisher = "BioHealth Journal",
+            publishedAt = "2h ago",
+            imageUrl = "https://picsum.photos/seed/tattle12/800/1000",
+            likes = 3100,
+            commentsCount = 680,
+            isBreaking = true,
+            views = 12500,
+            language = "English"
+        ),
+        Article(
+            id = "13",
+            category = "Education",
+            readTime = "4 min read",
+            headline = "Adaptive AI Tutors Bridge Learning Gaps Across 50 Nations",
+            hook = "Open-access personalized AI mentors provide 1-on-1 tutoring in 100+ native languages to millions of students.",
+            brief = "Global literacy and STEM proficiency metrics surge as free adaptive AI tutors reach underfunded rural classrooms.",
+            bullets = listOf(
+                "Student math and reading mastery improves by 2.5 grade levels in 6 months.",
+                "Offline voice-based models run on low-cost $30 tablet devices.",
+                "UN Educational Task Force endorses AI-assisted personalized learning standards."
+            ),
+            whyItMatters = "Universal access to high-quality 1-on-1 education is democratizing human potential worldwide.",
+            fullText = """Quality education was long constrained by geography and teacher-to-student ratios. Today, open-source adaptive learning models are turning smartphone and tablet screens into world-class private tutors.
+
+The AI adjusts instantly to each child's learning speed, using localized cultural metaphors, interactive games, and patient real-time feedback.
+
+From rural villages in Kenya to public schools in Detroit, educational inequality is receiving a technological solution.""",
+            publisher = "EduTech Horizon",
+            publishedAt = "14h ago",
+            imageUrl = "https://picsum.photos/seed/tattle13/800/1000",
+            likes = 1420,
+            commentsCount = 220,
+            isBreaking = false,
+            views = 6300,
+            language = "English"
+        ),
+        Article(
+            id = "14",
+            category = "Lifestyle",
+            readTime = "3 min read",
+            headline = "Urban Vertical Micro-Farming Transforms Metropolitan Food Security",
+            hook = "Modular hydroponic skyscrapers provide hyper-local organic produce with 95% less water consumption.",
+            brief = "Metropolitan centers are converting abandoned industrial warehouses into high-tech vertical agricultural hubs.",
+            bullets = listOf(
+                "Fresh produce travels less than 2 miles from harvest to dinner plate.",
+                "Zero synthetic pesticides used; powered entirely by local solar energy.",
+                "Cities cut agricultural supply chain emissions by 80%."
+            ),
+            whyItMatters = "Hyper-local urban food production buffers cities against climate disruptions and supply chain shocks.",
+            fullText = """The farm of the future doesn't require acres of soil or tractor diesel. In cities like Chicago, Singapore, and Amsterdam, multi-story automated hydroponic facilities are harvesting fresh leafy greens year-round.
+
+Precision LED light spectrums and closed-loop nutrient circulation allow plants to grow 50% faster while using a fraction of traditional water volume.
+
+Urban residents enjoy farm-to-table freshness picked hours before consumption, eliminating food waste and long-haul transport.""",
+            publisher = "Urban Living",
+            publishedAt = "18h ago",
+            imageUrl = "https://picsum.photos/seed/tattle14/800/1000",
+            likes = 990,
+            commentsCount = 145,
+            isBreaking = false,
+            views = 5100,
+            language = "English"
+        ),
+        Article(
+            id = "15",
+            category = "Sports",
+            readTime = "4 min read",
+            headline = "AI-Powered Motion Analytics Redefining Elite Athletic Training",
+            hook = "Computer vision sensor arrays prevent athletic injuries and optimize biometric performance in real-time.",
+            brief = "Professional sports teams adopt biomechanical AI monitoring to extend athlete career longevity and peak output.",
+            bullets = listOf(
+                "Muscle strain risk flagged 48 hours before physical symptoms occur.",
+                "Real-time game tactical adjustments generated by predictive models.",
+                "Injury recovery timelines reduced by 40% with smart feedback loops."
+            ),
+            whyItMatters = "Biomechanical precision prevents career-ending injuries and elevates human physical potential.",
+            fullText = """High-performance sports training has entered the era of computational biology. High-frame-rate cameras and wearable micro-sensors track thousands of skeletal movement data points per second.
+
+AI engines analyze joint angles, force vectors, and fatigue patterns, warning athletic trainers before a micro-tear becomes a debilitating injury.
+
+Coaches receive real-time tactical adjustments on sideline tablets, optimizing player rotations based on live biometric load.""",
+            publisher = "Sports Tech Daily",
+            publishedAt = "9h ago",
+            imageUrl = "https://picsum.photos/seed/tattle15/800/1000",
+            likes = 1650,
+            commentsCount = 275,
+            isBreaking = false,
+            views = 7200,
+            language = "English"
+        ),
+        Article(
+            id = "16",
+            category = "Creator Economy",
+            readTime = "3 min read",
+            headline = "Tokenized Royalty Smart Contracts Empower Independent Musicians",
+            hook = "Artists raise recording capital by selling micro-shares of future streaming revenue directly to fans.",
+            brief = "Decentralized fan-funding protocols allow indie musicians to remain completely independent while funding tours.",
+            bullets = listOf(
+                "Fans receive automatic monthly payout deposits directly to crypto wallets.",
+                "Indie tracks reach top global Spotify charts without record label contracts.",
+                "Musicians retain full ownership of master recordings."
+            ),
+            whyItMatters = "Direct fan ownership creates aligned incentives and financial independence for creative artists.",
+            fullText = """Record label advance contracts with predatory terms are becoming obsolete. Independent musicians are turning to fan tokenization to fund albums and global tours.
+
+By offering 20% of future master royalties as fractional smart contract tokens, artists raise capital directly from their most dedicated supporters in hours.
+
+Every time a track streams on Spotify, Apple Music, or TikTok, smart contracts disburse royalties automatically to token holders worldwide.""",
+            publisher = "MusicX Insider",
+            publishedAt = "11h ago",
+            imageUrl = "https://picsum.photos/seed/tattle16/800/1000",
+            likes = 1280,
+            commentsCount = 195,
+            isBreaking = false,
+            views = 5800,
+            language = "English"
+        ),
+        Article(
+            id = "17",
+            category = "Geopolitics",
+            readTime = "5 min read",
+            headline = "Global Treaty Drafted to Govern Autonomous Defense Systems",
+            hook = "50 nations gather in Geneva to establish binding human-in-the-loop protocols for military AI.",
+            brief = "International diplomats negotiate historic frameworks regulating autonomous drone swarms and cyber weapons.",
+            bullets = listOf(
+                "Mandatory human authorization required for all lethal force deployments.",
+                "Shared verification protocols established to prevent accidental escalation.",
+                "Tech industry leaders sign pledge banning unmonitored autonomous targeting."
+            ),
+            whyItMatters = "Establishing international guardrails on automated warfare is critical for long-term global stability.",
+            fullText = """Representatives from 50 nations have convened at the United Nations Geneva headquarters for emergency non-proliferation talks focused on autonomous weapons systems.
+
+The draft treaty establishes strict international standards requiring verifiable human operator intervention before any kinetic action is taken by autonomous systems.
+
+Delegates stressed that transparent international verification mechanisms are essential to prevent miscalculation in an era of hypersonic AI defense networks.""",
+            publisher = "Global Affairs Review",
+            publishedAt = "3h ago",
+            imageUrl = "https://picsum.photos/seed/tattle17/800/1000",
+            likes = 2890,
+            commentsCount = 610,
+            isBreaking = true,
+            views = 13100,
             language = "English"
         )
     )
@@ -203,19 +476,87 @@ The incident is a stark reminder that as we accelerate into direct-to-brain inte
     val surveys = listOf(
         Survey(
             id = "s1",
-            title = "Tattle Checkpoint",
+            title = "Tattle Reader Checkpoint",
             questions = listOf(
                 SurveyQuestion(
                     id = "q1",
-                    question = "Which trend are you most excited about for the next 5 years?",
+                    question = "Which tech domain interests you the most for daily reading?",
                     options = listOf(
-                        "Decentralized Off-Grid Internet (Mesh)",
-                        "Cognitive Liberty & Mind Privacy",
-                        "Direct-to-Device Cryptographic Voting",
-                        "Virtual Micronations & Cloud Cooperatives"
+                        "AI & Generative LLMs",
+                        "Clean Energy & Climate Tech",
+                        "Cybersecurity & Mesh Networks",
+                        "Space Exploration & Biotech"
+                    )
+                ),
+                SurveyQuestion(
+                    id = "q2",
+                    question = "How often do you prefer receiving breaking news updates?",
+                    options = listOf(
+                        "Instant Breaking Alerts",
+                        "Twice Daily Briefings",
+                        "Evening Summary Only",
+                        "Weekend Deep Dives"
+                    )
+                ),
+                SurveyQuestion(
+                    id = "q3",
+                    question = "What reading format do you find most valuable?",
+                    options = listOf(
+                        "30-Second Executive Briefs",
+                        "Bullet Key Takeaways",
+                        "In-Depth Analytical Reports",
+                        "Interactive Infographics"
+                    )
+                ),
+                SurveyQuestion(
+                    id = "q4",
+                    question = "How would you rate your Tattle reading experience so far?",
+                    options = listOf(
+                        "⭐⭐⭐⭐⭐ Exceptional",
+                        "Very Good",
+                        "Good",
+                        "Needs Improvement"
                     )
                 )
             )
         )
     )
+
+    fun getArticlesBySector(sector: String): List<Article> {
+        val clean = sector.trim().lowercase()
+        if (clean == "all" || clean == "for_you" || clean == "for you") {
+            return articles
+        }
+        val matched = articles.filter { article ->
+            val cat = article.category.lowercase()
+            cat.contains(clean) || clean.contains(cat) || isSectorMatch(clean, cat)
+        }
+        return if (matched.isNotEmpty()) matched else articles.shuffled()
+    }
+
+    private fun isSectorMatch(sector: String, category: String): Boolean {
+        return when (sector) {
+            "ai" -> category.contains("ai") || category.contains("tech") || category.contains("robotics")
+            "tech" -> category.contains("tech") || category.contains("ai") || category.contains("gaming")
+            "world news", "world_news" -> category.contains("world") || category.contains("politics") || category.contains("geopolitics")
+            "money and business", "money_and_business", "business" -> category.contains("business") || category.contains("money") || category.contains("finance") || category.contains("startups")
+            "science and space", "science_and_space", "science" -> category.contains("science") || category.contains("space") || category.contains("tech")
+            "climate and environment", "climate_and_environment" -> category.contains("climate") || category.contains("environment")
+            "gaming" -> category.contains("gaming") || category.contains("tech")
+            "media and entertainment", "entertainment" -> category.contains("entertainment") || category.contains("pop")
+            "pop culture", "pop_culture" -> category.contains("pop") || category.contains("creator") || category.contains("entertainment")
+            "geopolitics" -> category.contains("geopolitics") || category.contains("politics") || category.contains("world")
+            "sports" -> category.contains("sports")
+            "startups" -> category.contains("startups") || category.contains("business")
+            "healthcare" -> category.contains("healthcare") || category.contains("health")
+            "education" -> category.contains("education")
+            "lifestyle" -> category.contains("lifestyle")
+            "creator economy", "creator_economy" -> category.contains("creator") || category.contains("pop")
+            else -> false
+        }
+    }
+
+    fun getTrendingArticles(): List<Article> {
+        return articles.sortedByDescending { it.views + it.likes * 2 }
+    }
 }
