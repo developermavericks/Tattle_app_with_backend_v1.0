@@ -165,7 +165,8 @@ fun OnboardingScreen(
                             adFreeUntil = null,
                             sensitivity = "Standard",
                             lastReadDate = null,
-                            dob = dob
+                            dob = dob,
+                            hasSeenTutorial = false
                         )
                         scope.launch {
                             loginRepository.syncProfileWithServer(

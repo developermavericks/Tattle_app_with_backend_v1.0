@@ -2,89 +2,70 @@ package com.example.tattle.models
 
 enum class TourStep(
     val stepNumber: Int,
+    val totalSteps: Int,
     val title: String,
     val instruction: String,
-    val feedback: String,
-    val totalSteps: Int = 10
+    val feedback: String
 ) {
-    NONE(
-        stepNumber = 0,
-        title = "",
-        instruction = "",
-        feedback = ""
-    ),
+    NONE(0, 7, "", "", ""),
+
     SWIPE_RIGHT(
-        stepNumber = 1,
-        title = "Mark as Relevant",
-        instruction = "Swipe Right on the card to mark it relevant and save it",
-        feedback = "Awesome! Marked as Relevant. We'll show you more similar stories 🟢"
+        1, 7,
+        "Swipe Right to Read & Save ➡️",
+        "Swipe the card to the RIGHT to mark it as read and save it to your reading history.",
+        "Great job! Card saved to history 🟢"
     ),
+
     SWIPE_LEFT(
-        stepNumber = 2,
-        title = "Mark as Not Relevant",
-        instruction = "Swipe Left on the card if you find it not relevant",
-        feedback = "Got it! Marked as Not Relevant to tune your feed 🔴"
+        2, 7,
+        "Swipe Left to Skip ⬅️",
+        "Swipe the card to the LEFT to pass without recording history.",
+        "Passed! Moving to next story ⏩"
     ),
+
     SWIPE_UP(
-        stepNumber = 3,
-        title = "Quick Skip",
-        instruction = "Swipe Up on the card to skip it without rating",
-        feedback = "Skipped! You can skip cards anytime without rating them ⚡"
+        3, 7,
+        "Swipe Up for Fast Skip ⬆️",
+        "Swipe the card UPWARDS off the top of the screen to quickly skip.",
+        "Fast skipped! ⚡"
     ),
+
+    SWIPE_DOWN(
+        4, 7,
+        "Swipe Down to Bring Back ⬇️",
+        "Swipe DOWNWARDS from top to bottom to bring back the previous card.",
+        "Brought back previous story! ⏪"
+    ),
+
     TAP_BRIEF(
-        stepNumber = 4,
-        title = "Open Brief View",
-        instruction = "Tap the card to open its quick summary & key takeaways",
-        feedback = "Opened Brief View! Great for 30-second bullet summaries 🎯"
+        5, 7,
+        "Tap Card for Executive Brief 👆",
+        "TAP anywhere on the card to open the 30-second AI Executive Brief.",
+        "Opened Executive Brief! 📰"
     ),
+
     FULL_ARTICLE(
-        stepNumber = 5,
-        title = "Full Depth Report",
-        instruction = "Scroll down & tap 'Launch Full Report' for deep reading",
-        feedback = "Opened Full Report! Read the full story narrative in depth 📖"
+        6, 7,
+        "Launch Full In-Depth Report 📖",
+        "Tap 'Launch Full Depth Report' at the bottom of the brief to read the full narrative.",
+        "Opened Full In-Depth Report! 📚"
     ),
-    SHARE_ARTICLE(
-        stepNumber = 6,
-        title = "Share Stories",
-        instruction = "Tap the Share button to send interesting stories to friends",
-        feedback = "Opened Share dialog! Share stories easily across any platform 📤"
-    ),
-    EXPLORE_TAB(
-        stepNumber = 7,
-        title = "Explore Categories",
-        instruction = "Tap 'Explore' on the bottom bar to browse topics & sectors",
-        feedback = "Switched to Explore! Browse 15+ news categories & topics 🔍"
-    ),
-    DAILY_RECAP(
-        stepNumber = 8,
-        title = "Daily Reading Recap",
-        instruction = "Tap 'Recap' at the top of the feed to view your reading streak & stats",
-        feedback = "Opened Daily Recap! Track your cards read, streak & breakdown 📊"
-    ),
-    SETTINGS_DARK_MODE(
-        stepNumber = 9,
-        title = "Theme & Settings",
-        instruction = "Tap 'Settings' in the top bar to toggle Dark Mode & preferences",
-        feedback = "Opened Settings! Toggle Dark Mode or customize your experience ⚙️"
-    ),
+
     TRENDING_SWIPE(
-        stepNumber = 10,
-        title = "Trending Story Switcher",
-        instruction = "On Trending, open any story & swipe Left/Right to switch trending stories!",
-        feedback = "Congratulations! You've mastered all features of Tattle! 🎉"
+        7, 7,
+        "Swipe Brief Right-to-Left ↔️",
+        "Inside Brief View, swipe horizontally right-to-left to switch to the next story instantly.",
+        "Switched to next brief! Tour complete! 🎉"
     );
 
     fun next(): TourStep {
         return when (this) {
             SWIPE_RIGHT -> SWIPE_LEFT
             SWIPE_LEFT -> SWIPE_UP
-            SWIPE_UP -> TAP_BRIEF
+            SWIPE_UP -> SWIPE_DOWN
+            SWIPE_DOWN -> TAP_BRIEF
             TAP_BRIEF -> FULL_ARTICLE
-            FULL_ARTICLE -> SHARE_ARTICLE
-            SHARE_ARTICLE -> EXPLORE_TAB
-            EXPLORE_TAB -> DAILY_RECAP
-            DAILY_RECAP -> SETTINGS_DARK_MODE
-            SETTINGS_DARK_MODE -> TRENDING_SWIPE
+            FULL_ARTICLE -> TRENDING_SWIPE
             TRENDING_SWIPE -> NONE
             NONE -> NONE
         }

@@ -61,7 +61,7 @@ import com.example.tattle.ui.theme.DarkTextPrimary
 @Composable
 fun SplashScreen(
     isDark: Boolean = false,
-    onGetStarted: () -> Unit
+    onGetStarted: (Boolean) -> Unit = {}
 ) {
     var showGoogleLogin by remember { mutableStateOf(false) }
     var showPhoneLogin by remember { mutableStateOf(false) }
@@ -218,9 +218,9 @@ fun SplashScreen(
         if (showGoogleLogin) {
             GoogleLoginOverlay(
                 onDismiss = { showGoogleLogin = false },
-                onLoginSuccess = {
+                onLoginSuccess = { needsOnboarding ->
                     showGoogleLogin = false
-                    onGetStarted()
+                    onGetStarted(needsOnboarding)
                 }
             )
         }
@@ -228,9 +228,9 @@ fun SplashScreen(
         if (showPhoneLogin) {
             PhoneLoginOverlay(
                 onDismiss = { showPhoneLogin = false },
-                onLoginSuccess = {
+                onLoginSuccess = { needsOnboarding ->
                     showPhoneLogin = false
-                    onGetStarted()
+                    onGetStarted(needsOnboarding)
                 }
             )
         }
@@ -238,9 +238,9 @@ fun SplashScreen(
         if (showEmailLogin) {
             EmailLoginOverlay(
                 onDismiss = { showEmailLogin = false },
-                onLoginSuccess = {
+                onLoginSuccess = { needsOnboarding ->
                     showEmailLogin = false
-                    onGetStarted()
+                    onGetStarted(needsOnboarding)
                 }
             )
         }
@@ -248,7 +248,7 @@ fun SplashScreen(
 }
 
 @Composable
-fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
+fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) {
     val language = LocalAppLanguage.current
     val loginRepository = koinInject<LoginRepository>()
     var phoneNumber by remember { mutableStateOf("") }
@@ -485,7 +485,8 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                                 val result = loginRepository.verifyOtp("$countryCode$phoneNumber", otp)
                                                 if (result.isSuccess) {
                                                     isLoading = false
-                                                    onLoginSuccess()
+                                                    val needsOnboarding = result.getOrDefault(true)
+                                                    onLoginSuccess(needsOnboarding)
                                                 } else {
                                                     error = result.exceptionOrNull()?.message ?: "Invalid OTP"
                                                     isLoading = false
@@ -526,7 +527,7 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
 }
 
 @Composable
-fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
+fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) {
     val loginRepository = koinInject<LoginRepository>()
     val language = LocalAppLanguage.current
     var email by remember { mutableStateOf("") }
@@ -677,7 +678,8 @@ fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                         scope.launch {
                                             val result = loginRepository.verifyEmailOtp(email, otp)
                                             if (result.isSuccess) {
-                                                onLoginSuccess()
+                                                val needsOnboarding = result.getOrDefault(true)
+                                                onLoginSuccess(needsOnboarding)
                                             } else {
                                                 error = result.exceptionOrNull()?.message ?: "Invalid code"
                                             }
@@ -704,7 +706,7 @@ fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
 }
 
 @Composable
-fun GoogleLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
+fun GoogleLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) {
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val language = LocalAppLanguage.current
@@ -742,7 +744,7 @@ fun GoogleLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
                                         scope.launch {
                                             val result = loginRepository.googleLogin(idToken)
                                             if (result.isSuccess) {
-                                                onLoginSuccess()
+                                                onLoginSuccess(true)
                                             } else {
                                                 error = result.exceptionOrNull()?.message
                                                 isLoading = false

@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import io.kamel.image.KamelImage
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -46,8 +47,6 @@ import com.example.tattle.utils.currentTimeMillis
 import org.koin.compose.koinInject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-
 @Composable
 fun FeedScreen(
     preferences: UserPreferences,
@@ -267,11 +266,54 @@ fun FeedScreen(
                     BoxWithConstraints(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 20.dp, vertical = 16.dp)
+                            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 32.dp)
                     ) {
-                        ArticleCard(
-                            article = targetArticle,
-                            isBookmarked = preferences.bookmarks.contains(targetArticle.id),
+                        val nextArticle1 = filteredArticles.getOrNull(currentIndex + 1)
+                        val nextArticle2 = filteredArticles.getOrNull(currentIndex + 2)
+
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            // Bottom Card Stack Layer (3rd Card in Deck) - Peeks out 24dp below
+                            if (nextArticle2 != null) {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .offset(y = 24.dp)
+                                        .graphicsLayer {
+                                            scaleX = 0.88f
+                                            alpha = 0.65f
+                                        },
+                                    shape = RoundedCornerShape(32.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isDark) Color(0xFF1E1E1E) else Color(0xFFE5E5EA)
+                                    ),
+                                    border = BorderStroke(1.5.dp, if (isDark) Color(0xFF383838) else Color(0xFFD1D1D6)),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                                ) {}
+                            }
+
+                            // Middle Card Stack Layer (2nd Card in Deck) - Peeks out 12dp below
+                            if (nextArticle1 != null) {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .offset(y = 12.dp)
+                                        .graphicsLayer {
+                                            scaleX = 0.94f
+                                            alpha = 0.85f
+                                        },
+                                    shape = RoundedCornerShape(32.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isDark) Color(0xFF252525) else Color(0xFFF2F2F7)
+                                    ),
+                                    border = BorderStroke(1.5.dp, if (isDark) Color(0xFF484848) else Color(0xFFE5E5EA)),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                ) {}
+                            }
+
+                            // Top Active Interactive Article Card
+                            ArticleCard(
+                                article = targetArticle,
+                                isBookmarked = preferences.bookmarks.contains(targetArticle.id),
                             onToggleBookmark = {
                                 val newBookmarks = if (preferences.bookmarks.contains(targetArticle.id)) {
                                     preferences.bookmarks - targetArticle.id
@@ -322,6 +364,11 @@ fun FeedScreen(
                                     preferences
                                 )
                             },
+                            onSwipeDown = {
+                                if (currentIndex > 0) {
+                                    currentIndex--
+                                }
+                            },
                             onReaction = { reaction ->
                                 val newReactions = preferences.reactions.toMutableMap()
                                 newReactions[targetArticle.id] = reaction
@@ -337,6 +384,7 @@ fun FeedScreen(
             }
         }
     }
+}
 }
 
 private fun proceedNext(

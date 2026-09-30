@@ -33,6 +33,8 @@ dependencies {
 
     implementation(platform(libs.firebase.android.bom))
     implementation(libs.firebase.android.auth)
+    implementation(libs.firebase.messaging)
+    implementation(libs.androidx.core.ktx)
     implementation(libs.firebase.appcheck.playintegrity)
     implementation(libs.firebase.appcheck.debug)
 
@@ -41,11 +43,11 @@ dependencies {
 }
 
 android {
-    namespace = "com.example.tattle"
+    namespace = "com.tattle.app"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.example.tattle"
+        applicationId = "com.tattle.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

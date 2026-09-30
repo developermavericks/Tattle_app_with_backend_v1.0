@@ -50,6 +50,7 @@ fun ArticleCard(
     onSwipeLeft: () -> Unit,
     onSwipeRight: () -> Unit,
     onSwipeUp: () -> Unit = {},
+    onSwipeDown: () -> Unit = {},
     onReaction: (String) -> Unit,
     onImageLoaded: (String) -> Unit,
     currentReaction: String?,
@@ -129,6 +130,13 @@ fun ArticleCard(
                                 launch { offsetY.animateTo(-1200f) }
                                 onSwipeUp()
                             }
+                        } else if (offsetY.value > 250f) {
+                            scope.launch {
+                                launch { rotation.animateTo(0f) }
+                                launch { offsetX.animateTo(0f) }
+                                launch { offsetY.animateTo(1200f) }
+                                onSwipeDown()
+                            }
                         } else {
                             scope.launch {
                                 launch { offsetX.animateTo(0f) }
@@ -146,9 +154,9 @@ fun ArticleCard(
                             offsetX.snapTo(newX)
                             offsetY.snapTo(newY)
 
-                            // Keep card straight (0° tilt) when dragging vertically upwards to skip
-                            val isVerticalUp = abs(newY) > abs(newX) && newY < 0f
-                            val targetRotation = if (isVerticalUp) 0f else newX * 0.04f
+                            // Keep card straight (0° tilt) when dragging vertically (up or down)
+                            val isVerticalDrag = abs(newY) > abs(newX)
+                            val targetRotation = if (isVerticalDrag) 0f else newX * 0.04f
                             rotation.snapTo(targetRotation)
 
                             scale.snapTo(1f - ((abs(newX) + abs(newY)) / 2000f).coerceAtMost(0.1f))

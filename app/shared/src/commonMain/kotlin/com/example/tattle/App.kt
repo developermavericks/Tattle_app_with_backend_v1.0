@@ -62,7 +62,7 @@ fun App() {
             return@KoinContext
         }
 
-        val isAlreadyLoggedIn = preferences?.isOnboarded == true || preferences?.phoneNumber?.isNotBlank() == true || preferences?.email?.isNotBlank() == true
+        val isAlreadyLoggedIn = preferences?.isOnboarded == true && preferences?.dob?.isNotBlank() == true
         val initialDestination = if (isAlreadyLoggedIn) Screen.Feed.route else Screen.Splash.route
         val navController = rememberNavController()
         val kamelConfig: KamelConfig = koinInject()
@@ -150,9 +150,8 @@ fun App() {
                             composable(Screen.Splash.route) {
                                 SplashScreen(
                                     isDark = isDark,
-                                    onGetStarted = {
-                                        val hasCompletedOnboarding = preferences?.isOnboarded == true && preferences?.ageGroup?.isNotBlank() == true
-                                        val nextRoute = if (hasCompletedOnboarding) Screen.Feed.route else Screen.Onboarding.route
+                                    onGetStarted = { needsOnboarding ->
+                                        val nextRoute = if (needsOnboarding) Screen.Onboarding.route else Screen.Feed.route
                                         navController.navigate(nextRoute) {
                                             popUpTo(Screen.Splash.route) { inclusive = true }
                                         }

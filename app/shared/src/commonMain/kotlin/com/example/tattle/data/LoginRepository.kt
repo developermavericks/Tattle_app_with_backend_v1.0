@@ -82,7 +82,7 @@ class LoginRepository(
         }
     }
 
-    suspend fun verifyOtp(phone: String, otp: String): Result<String> {
+    suspend fun verifyOtp(phone: String, otp: String): Result<Boolean> {
         return try {
             val response: AuthResponseData = client.post("$baseUrl/api/auth/otp/verify") {
                 contentType(ContentType.Application.Json)
@@ -90,23 +90,48 @@ class LoginRepository(
             }.body()
 
             if (response.success && response.token != null) {
+                val serverProfile = fetchProfileFromServer(phone = phone).getOrNull()
                 val currentPrefs = preferencesRepository.userPreferences.value
-                val needsOnboarding = currentPrefs.ageGroup.isBlank() || !currentPrefs.isOnboarded
-                preferencesRepository.updatePreferences(
-                    currentPrefs.copy(phoneNumber = phone, isOnboarded = !needsOnboarding)
-                )
-                Result.success(response.token)
+
+                val hasServerDob = !serverProfile?.dob.isNullOrBlank() || serverProfile?.age != null
+                val userAgeGroup = serverProfile?.age?.toString() ?: currentPrefs.ageGroup
+                val userDob = serverProfile?.dob ?: currentPrefs.dob
+                val needsOnboarding = !hasServerDob && userDob.isBlank()
+
+                val finalPrefs = if (!needsOnboarding) {
+                    currentPrefs.copy(
+                        phoneNumber = phone,
+                        dob = userDob,
+                        ageGroup = userAgeGroup,
+                        isOnboarded = true
+                    )
+                } else {
+                    currentPrefs.copy(
+                        phoneNumber = phone,
+                        dob = "",
+                        ageGroup = "",
+                        isOnboarded = false
+                    )
+                }
+
+                preferencesRepository.updatePreferences(finalPrefs)
+                Result.success(needsOnboarding)
             } else {
                 Result.failure(Exception(response.message ?: "OTP verification failed"))
             }
         } catch (_: Exception) {
             // Local simulation fallback
             val currentPrefs = preferencesRepository.userPreferences.value
-            val needsOnboarding = currentPrefs.ageGroup.isBlank() || !currentPrefs.isOnboarded
-            preferencesRepository.updatePreferences(
-                currentPrefs.copy(phoneNumber = phone, isOnboarded = !needsOnboarding)
-            )
-            Result.success("simulated_token")
+            val needsOnboarding = currentPrefs.dob.isBlank() || currentPrefs.ageGroup.isBlank()
+
+            val finalPrefs = if (!needsOnboarding) {
+                currentPrefs.copy(phoneNumber = phone, isOnboarded = true)
+            } else {
+                currentPrefs.copy(phoneNumber = phone, dob = "", ageGroup = "", isOnboarded = false)
+            }
+
+            preferencesRepository.updatePreferences(finalPrefs)
+            Result.success(needsOnboarding)
         }
     }
 
@@ -128,7 +153,7 @@ class LoginRepository(
         }
     }
 
-    suspend fun verifyEmailOtp(email: String, otp: String): Result<String> {
+    suspend fun verifyEmailOtp(email: String, otp: String): Result<Boolean> {
         return try {
             val response: AuthResponseData = client.post("$baseUrl/api/auth/email/verify") {
                 contentType(ContentType.Application.Json)
@@ -136,23 +161,48 @@ class LoginRepository(
             }.body()
 
             if (response.success && response.token != null) {
+                val serverProfile = fetchProfileFromServer(email = email).getOrNull()
                 val currentPrefs = preferencesRepository.userPreferences.value
-                val needsOnboarding = currentPrefs.ageGroup.isBlank() || !currentPrefs.isOnboarded
-                preferencesRepository.updatePreferences(
-                    currentPrefs.copy(email = email, isOnboarded = !needsOnboarding)
-                )
-                Result.success(response.token)
+
+                val hasServerDob = !serverProfile?.dob.isNullOrBlank() || serverProfile?.age != null
+                val userAgeGroup = serverProfile?.age?.toString() ?: currentPrefs.ageGroup
+                val userDob = serverProfile?.dob ?: currentPrefs.dob
+                val needsOnboarding = !hasServerDob && userDob.isBlank()
+
+                val finalPrefs = if (!needsOnboarding) {
+                    currentPrefs.copy(
+                        email = email,
+                        dob = userDob,
+                        ageGroup = userAgeGroup,
+                        isOnboarded = true
+                    )
+                } else {
+                    currentPrefs.copy(
+                        email = email,
+                        dob = "",
+                        ageGroup = "",
+                        isOnboarded = false
+                    )
+                }
+
+                preferencesRepository.updatePreferences(finalPrefs)
+                Result.success(needsOnboarding)
             } else {
                 Result.failure(Exception(response.message ?: "Email verification failed"))
             }
         } catch (_: Exception) {
             // Local simulation fallback
             val currentPrefs = preferencesRepository.userPreferences.value
-            val needsOnboarding = currentPrefs.ageGroup.isBlank() || !currentPrefs.isOnboarded
-            preferencesRepository.updatePreferences(
-                currentPrefs.copy(email = email, isOnboarded = !needsOnboarding)
-            )
-            Result.success("simulated_token")
+            val needsOnboarding = currentPrefs.dob.isBlank() || currentPrefs.ageGroup.isBlank()
+
+            val finalPrefs = if (!needsOnboarding) {
+                currentPrefs.copy(email = email, isOnboarded = true)
+            } else {
+                currentPrefs.copy(email = email, dob = "", ageGroup = "", isOnboarded = false)
+            }
+
+            preferencesRepository.updatePreferences(finalPrefs)
+            Result.success(needsOnboarding)
         }
     }
 

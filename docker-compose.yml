@@ -1,15 +1,79 @@
+version: '3.8'
+
 services:
-  postgres:
+  # 1. Ktor Core Backend Server Engine
+  tattle-server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: tattle-backend
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - DATABASE_URL=jdbc:postgresql://postgres-db:5432/tattle_db
+      - DATABASE_USER=tattle_user
+      - DATABASE_PASSWORD=tattle_secure_password
+      - ML_BACKEND_URL=http://tattle-ml-backend:8000
+      - REDIS_HOST=redis-cache
+      - REDIS_PORT=6379
+      - ENVATO_API_TOKEN=OP6NdHQ7vl9vb4TNaOqloZdaf0c9A2UF
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+
+  # 2. Python ML Scraper & Age-Aware Filter Service
+  tattle-ml-backend:
+    image: python:3.11-slim
+    container_name: tattle-ml-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://tattle_user:tattle_secure_password@postgres-db:5432/tattle_db
+      - REDIS_HOST=redis-cache
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  # 3. Production PostgreSQL 16 Database
+  postgres-db:
     image: postgres:16-alpine
-    container_name: tattle-db
+    container_name: tattle-postgres
+    restart: always
+    ports:
+      - "5433:5432"
     environment:
       POSTGRES_DB: tattle_db
       POSTGRES_USER: tattle_user
-      POSTGRES_PASSWORD: tattle_password
-    ports:
-      - "5433:5432"
+      POSTGRES_PASSWORD: tattle_secure_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tattle_user -d tattle_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 4. Production Redis 7 In-Memory Cache
+  redis-cache:
+    image: redis:7-alpine
+    container_name: tattle-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
+  redis_data:
