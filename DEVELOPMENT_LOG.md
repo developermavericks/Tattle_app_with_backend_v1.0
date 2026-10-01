@@ -1902,3 +1902,289 @@ DEVELOPMENT_LOG.md                                 | 1568 ++++++++++++++++++
  tattle.db                                          |  Bin 24576 -> 139264 bytes
  23 files changed, 2628 insertions(+), 1679 deletions(-)
 ```
+
+
+## 📝 Update Log - 2026-09-30 13:56:12
+
+### Modified / Added Files:
+```text
+M tattle.db
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/brief_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/explore_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/feed_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/full_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/onboarding_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/recap_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/saved_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/settings_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/share_dialog.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/splash_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/trending_screen.png
+?? Tattle_Application_Screens_Documentation.pdf
+?? app_screens_doc.html
+?? test.pdf
+```
+
+### Changes Statistics:
+```text
+tattle.db | Bin 24576 -> 139264 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+```
+
+
+## 📝 Update Log - 2026-09-30 15:54:00
+
+### Modified / Added Files:
+```text
+M DEVELOPMENT_LOG.md
+ M app/androidApp/src/main/AndroidManifest.xml
+ M app/shared/src/commonMain/kotlin/com/example/tattle/PlatformConfig.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/data/ArticleRepository.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/FeedScreen.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/TrendingScreen.kt
+ M server/src/main/kotlin/com/example/tattle/Application.kt
+ M tattle.db
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/brief_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/explore_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/feed_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/full_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/onboarding_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/recap_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/saved_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/settings_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/share_dialog.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/splash_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/trending_screen.png
+?? Tattle_Application_Screens_Documentation.pdf
+?? app_screens_doc.html
+?? test.pdf
+```
+
+### Changes Statistics:
+```text
+DEVELOPMENT_LOG.md                                 |  28 ++++++
+ app/androidApp/src/main/AndroidManifest.xml        |   8 +-
+ .../kotlin/com/example/tattle/PlatformConfig.kt    |   2 +-
+ .../com/example/tattle/data/ArticleRepository.kt   |  36 ++++----
+ .../com/example/tattle/ui/screens/FeedScreen.kt    |  10 ++-
+ .../example/tattle/ui/screens/TrendingScreen.kt    |   4 +-
+ .../main/kotlin/com/example/tattle/Application.kt  |  96 ++++++++++++++++++++-
+ tattle.db                                          | Bin 24576 -> 139264 bytes
+ 8 files changed, 155 insertions(+), 29 deletions(-)
+```
+
+
+## 📝 Update Log - 2026-09-30 16:15:48
+
+### Modified / Added Files:
+```text
+M DEVELOPMENT_LOG.md
+ M app/androidApp/src/main/AndroidManifest.xml
+ M app/shared/src/commonMain/kotlin/com/example/tattle/PlatformConfig.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/data/ArticleRepository.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/FeedScreen.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/TrendingScreen.kt
+ M server/src/main/kotlin/com/example/tattle/Application.kt
+ M tattle.db
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/brief_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/explore_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/feed_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/full_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/onboarding_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/recap_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/saved_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/settings_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/share_dialog.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/splash_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/trending_screen.png
+?? Tattle_Application_Screens_Documentation.pdf
+?? app_screens_doc.html
+?? test.pdf
+```
+
+### Changes Statistics:
+```text
+DEVELOPMENT_LOG.md                                 |  70 +++++++++++++++
+ app/androidApp/src/main/AndroidManifest.xml        |   8 +-
+ .../kotlin/com/example/tattle/PlatformConfig.kt    |   2 +-
+ .../com/example/tattle/data/ArticleRepository.kt   |  36 ++++----
+ .../com/example/tattle/ui/screens/FeedScreen.kt    |  10 ++-
+ .../example/tattle/ui/screens/TrendingScreen.kt    |   4 +-
+ .../main/kotlin/com/example/tattle/Application.kt  |  96 ++++++++++++++++++++-
+ tattle.db                                          | Bin 24576 -> 139264 bytes
+ 8 files changed, 197 insertions(+), 29 deletions(-)
+```
+
+
+## 📝 Update Log - 2026-09-30 16:26:27
+
+### Modified / Added Files:
+```text
+M DEVELOPMENT_LOG.md
+ M app/androidApp/src/main/AndroidManifest.xml
+ M app/shared/src/commonMain/kotlin/com/example/tattle/PlatformConfig.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/data/ArticleRepository.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/FeedScreen.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/TrendingScreen.kt
+ M server/src/main/kotlin/com/example/tattle/Application.kt
+ M tattle.db
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/brief_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/explore_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/feed_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/full_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/onboarding_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/recap_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/saved_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/settings_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/share_dialog.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/splash_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/trending_screen.png
+?? Tattle_Application_Screens_Documentation.pdf
+?? app_screens_doc.html
+?? test.pdf
+```
+
+### Changes Statistics:
+```text
+DEVELOPMENT_LOG.md                                 | 112 +++++++++++++++++++++
+ app/androidApp/src/main/AndroidManifest.xml        |   8 +-
+ .../kotlin/com/example/tattle/PlatformConfig.kt    |   2 +-
+ .../com/example/tattle/data/ArticleRepository.kt   |  36 ++++---
+ .../com/example/tattle/ui/screens/FeedScreen.kt    |  10 +-
+ .../example/tattle/ui/screens/TrendingScreen.kt    |   4 +-
+ .../main/kotlin/com/example/tattle/Application.kt  |  96 +++++++++++++++++-
+ tattle.db                                          | Bin 24576 -> 139264 bytes
+ 8 files changed, 239 insertions(+), 29 deletions(-)
+```
+
+
+## 📝 Update Log - 2026-10-01 14:31:25
+
+### Modified / Added Files:
+```text
+M DEVELOPMENT_LOG.md
+ M app/androidApp/src/main/AndroidManifest.xml
+ M app/shared/src/commonMain/kotlin/com/example/tattle/App.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/PlatformConfig.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/data/ArticleRepository.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/FeedScreen.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/TrendingScreen.kt
+ M server/src/main/kotlin/com/example/tattle/Application.kt
+ M tattle.db
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/brief_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/explore_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/feed_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/full_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/onboarding_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/recap_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/saved_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/settings_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/share_dialog.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/splash_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/trending_screen.png
+?? Tattle_Application_Screens_Documentation.pdf
+?? app_screens_doc.html
+?? test.pdf
+```
+
+### Changes Statistics:
+```text
+DEVELOPMENT_LOG.md                                 | 154 +++++++++++++++++++++
+ app/androidApp/src/main/AndroidManifest.xml        |   8 +-
+ .../commonMain/kotlin/com/example/tattle/App.kt    |  13 +-
+ .../kotlin/com/example/tattle/PlatformConfig.kt    |   2 +-
+ .../com/example/tattle/data/ArticleRepository.kt   |  36 +++--
+ .../com/example/tattle/ui/screens/FeedScreen.kt    |  10 +-
+ .../example/tattle/ui/screens/TrendingScreen.kt    |   4 +-
+ .../main/kotlin/com/example/tattle/Application.kt  |  96 ++++++++++++-
+ tattle.db                                          | Bin 24576 -> 139264 bytes
+ 9 files changed, 284 insertions(+), 39 deletions(-)
+```
+
+
+## 📝 Update Log - 2026-10-01 17:12:49
+
+### Modified / Added Files:
+```text
+M DEVELOPMENT_LOG.md
+ M app/androidApp/src/main/AndroidManifest.xml
+ M app/shared/src/commonMain/kotlin/com/example/tattle/App.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/PlatformConfig.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/data/ArticleRepository.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/FeedScreen.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/TrendingScreen.kt
+ M server/src/main/kotlin/com/example/tattle/Application.kt
+ M tattle.db
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/brief_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/explore_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/feed_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/full_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/onboarding_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/recap_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/saved_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/settings_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/share_dialog.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/splash_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/trending_screen.png
+?? Tattle_Application_Screens_Documentation.pdf
+?? app_screens_doc.html
+?? test.pdf
+```
+
+### Changes Statistics:
+```text
+DEVELOPMENT_LOG.md                                 | 198 +++++++++++++++++++++
+ app/androidApp/src/main/AndroidManifest.xml        |   8 +-
+ .../commonMain/kotlin/com/example/tattle/App.kt    |  13 +-
+ .../kotlin/com/example/tattle/PlatformConfig.kt    |   2 +-
+ .../com/example/tattle/data/ArticleRepository.kt   | 110 ++++++++++--
+ .../com/example/tattle/ui/screens/FeedScreen.kt    |  10 +-
+ .../example/tattle/ui/screens/TrendingScreen.kt    |   4 +-
+ .../main/kotlin/com/example/tattle/Application.kt  |  96 +++++++++-
+ tattle.db                                          | Bin 24576 -> 139264 bytes
+ 9 files changed, 401 insertions(+), 40 deletions(-)
+```
+
+
+## 📝 Update Log - 2026-10-01 17:29:15
+
+### Modified / Added Files:
+```text
+M DEVELOPMENT_LOG.md
+ M app/androidApp/src/main/AndroidManifest.xml
+ M app/shared/src/commonMain/kotlin/com/example/tattle/App.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/PlatformConfig.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/data/ArticleRepository.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/FeedScreen.kt
+ M app/shared/src/commonMain/kotlin/com/example/tattle/ui/screens/TrendingScreen.kt
+ M server/src/main/kotlin/com/example/tattle/Application.kt
+ M tattle.db
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/brief_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/explore_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/feed_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/full_view.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/onboarding_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/recap_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/saved_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/settings_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/share_dialog.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/splash_screen.png
+?? .artifacts/11031efc-4398-4f03-9894-b34dcff2844b/trending_screen.png
+?? Tattle_Application_Screens_Documentation.pdf
+?? app_screens_doc.html
+?? test.pdf
+```
+
+### Changes Statistics:
+```text
+DEVELOPMENT_LOG.md                                 | 242 +++++++++++++++++++++
+ app/androidApp/src/main/AndroidManifest.xml        |   8 +-
+ .../commonMain/kotlin/com/example/tattle/App.kt    |  13 +-
+ .../kotlin/com/example/tattle/PlatformConfig.kt    |   2 +-
+ .../com/example/tattle/data/ArticleRepository.kt   | 111 ++++++++--
+ .../com/example/tattle/ui/screens/FeedScreen.kt    |  10 +-
+ .../example/tattle/ui/screens/TrendingScreen.kt    |   4 +-
+ .../main/kotlin/com/example/tattle/Application.kt  |  96 +++++++-
+ tattle.db                                          | Bin 24576 -> 139264 bytes
+ 9 files changed, 446 insertions(+), 40 deletions(-)
+```

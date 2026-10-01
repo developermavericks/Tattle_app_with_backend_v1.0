@@ -1,6 +1,7 @@
 package com.example.tattle
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -133,18 +134,10 @@ fun App() {
                             navController = navController,
                             startDestination = initialDestination,
                             enterTransition = { 
-                                if (initialState.destination.route == Screen.Splash.route) {
-                                    fadeIn(tween(300))
-                                } else {
-                                    slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) + fadeIn()
-                                }
+                                fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
                             },
                             exitTransition = { 
-                                if (targetState.destination.route == Screen.Splash.route) {
-                                    fadeOut(tween(300))
-                                } else {
-                                    slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300)) + fadeOut()
-                                }
+                                fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing))
                             }
                         ) {
                             composable(Screen.Splash.route) {

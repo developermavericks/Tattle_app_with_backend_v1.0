@@ -4,6 +4,7 @@ import com.example.tattle.PlatformConfig
 import com.example.tattle.models.Article
 import com.example.tattle.models.CuratedArticle
 import com.example.tattle.models.SectorResponse
+import com.example.tattle.utils.currentTimeMillis
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlin.random.Random
 
 @Serializable
@@ -37,6 +39,29 @@ data class RecordShareReq(val userIdentifier: String, val articleId: String, val
 
 @Serializable
 data class BatchArticlesReq(val ids: List<String>)
+
+@Serializable
+data class DirectMlFeedRes(
+    val sector: String? = null,
+    val count: Int = 0,
+    val articles: List<DirectMlArticleDto> = emptyList()
+)
+
+@Serializable
+data class DirectMlArticleDto(
+    val id: Int? = null,
+    val article_id: String? = null,
+    val headline: String? = null,
+    val brief: String? = null,
+    val bullets_json: String? = null,
+    val why_it_matters: String? = null,
+    val full_text: String? = null,
+    val image_url: String? = null,
+    val age_bracket: String? = null,
+    val sector: String? = null,
+    val score: Float? = null,
+    val published_at: String? = null
+)
 
 fun List<Article>.sortProcessedFirst(): List<Article> {
     return this.sortedWith(
@@ -94,13 +119,15 @@ class ArticleRepository(private val client: HttpClient) {
         )
     }
 
-    suspend fun getArticlesBySector(sector: String): List<Article> {
+    suspend fun getArticlesBySector(sector: String, userAge: Int = 18): List<Article> {
         val encodedSector = sector.replace(" ", "%20")
         
-        // 1. Try Ktor Backend with fast 1.5s timeout
-        val backendArticles = withTimeoutOrNull(1500) {
+        // 1. Try Ktor Gateway Backend on Port 8081
+        val backendArticles = withTimeoutOrNull(4000) {
             try {
-                val response: List<Article> = client.get("$backendUrl/api/mobile/articles/$encodedSector").body()
+                val response: List<Article> = client.get("$backendUrl/api/mobile/articles/$encodedSector") {
+                    parameter("user_age", userAge)
+                }.body()
                 if (response.isNotEmpty()) response else null
             } catch (_: Exception) {
                 null
@@ -116,7 +143,55 @@ class ArticleRepository(private val client: HttpClient) {
             return sorted
         }
 
-        // 2. Fallback to Mock Data when backend is offline/timeout
+        // 2. Direct ML Backend Fallback on Port 8000 if Gateway 8081 is offline
+        val directMlArticles = withTimeoutOrNull(4000) {
+            try {
+                val querySector = if (encodedSector == "all" || encodedSector == "for_you") "tech" else encodedSector
+                val mlPortUrl = if (backendUrl.contains(":8081")) backendUrl.replace(":8081", ":8000") else "http://127.0.0.1:8000"
+                val mlRes: DirectMlFeedRes = client.get("$mlPortUrl/api/feed/$querySector") {
+                    parameter("user_age", userAge)
+                }.body()
+                if (mlRes.articles.isNotEmpty()) {
+                    mlRes.articles.map { ml ->
+                        val bullets: List<String> = try {
+                            if (!ml.bullets_json.isNullOrBlank()) Json.decodeFromString(ml.bullets_json) else listOf("Key insight point 1.", "Key insight point 2.")
+                        } catch (_: Exception) { listOf("Key insight point 1.", "Key insight point 2.") }
+                        
+                        Article(
+                            id = "ml_" + (ml.article_id ?: ml.id?.toString() ?: currentTimeMillis().toString()),
+                            category = ml.sector ?: "tech",
+                            readTime = "30s read",
+                            headline = ml.headline ?: "Breaking Headline",
+                            hook = ml.brief ?: "Brief summary.",
+                            brief = ml.brief ?: "Brief summary.",
+                            bullets = bullets,
+                            whyItMatters = ml.why_it_matters ?: "Impact analysis.",
+                            fullText = ml.full_text ?: "Full narrative text.",
+                            publisher = "Tattle ML Wire",
+                            publishedAt = ml.published_at?.take(10) ?: "Today",
+                            imageUrl = ml.image_url ?: "https://images.unsplash.com/photo-1518770660439-4636190af475",
+                            likes = 1200,
+                            commentsCount = 88,
+                            isBreaking = false,
+                            views = 8500
+                        )
+                    }
+                } else null
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        if (directMlArticles != null) {
+            _isOffline.value = false
+            val sorted = directMlArticles.sortProcessedFirst()
+            cacheMutex.withLock {
+                sorted.forEach { articleCache[it.id] = it }
+            }
+            return sorted
+        }
+
+        // 3. Fallback to Mock Data when both backends are offline
         _isOffline.value = true
         val mockArticles = MockData.getArticlesBySector(sector).sortProcessedFirst()
         cacheMutex.withLock {
@@ -125,11 +200,13 @@ class ArticleRepository(private val client: HttpClient) {
         return mockArticles
     }
 
-    suspend fun getForYouArticles(userSectors: List<String>): List<Article> = coroutineScope {
-        // 1. Try Ktor Backend with fast 1.5s timeout
-        val remoteForYou = withTimeoutOrNull(1500) {
+    suspend fun getForYouArticles(userSectors: List<String>, userAge: Int = 18): List<Article> = coroutineScope {
+        // 1. Try Ktor Backend with 4.0s timeout
+        val remoteForYou = withTimeoutOrNull(4000) {
             try {
-                val response: List<Article> = client.get("$backendUrl/api/articles/for-you").body()
+                val response: List<Article> = client.get("$backendUrl/api/articles/for-you") {
+                    parameter("user_age", userAge)
+                }.body()
                 if (response.isNotEmpty()) {
                     _isOffline.value = false
                     val sorted = response.sortProcessedFirst()
@@ -149,7 +226,7 @@ class ArticleRepository(private val client: HttpClient) {
 
         val sectorsToFetch = if (userSectors.isEmpty()) listOf("ai", "tech", "world news", "money and business") else userSectors
         val deferreds = sectorsToFetch.map { sector ->
-            async { getArticlesBySector(sector) }
+            async { getArticlesBySector(sector, userAge) }
         }
         val aggregated = deferreds.awaitAll().flatten()
         val distinct = aggregated.distinctBy { it.id }.sortProcessedFirst()
@@ -165,7 +242,7 @@ class ArticleRepository(private val client: HttpClient) {
         mockArticles
     }
 
-    suspend fun getTrendingArticles(): List<Article> = coroutineScope {
+    suspend fun getTrendingArticles(userAge: Int = 18): List<Article> = coroutineScope {
         // 1. Instant RAM Cache Check (0ms latency)
         cacheMutex.withLock {
             val cachedTrending = articleCache.values.filter { it.views > 2000 || it.isBreaking }.sortProcessedFirst()
@@ -174,10 +251,12 @@ class ArticleRepository(private val client: HttpClient) {
             }
         }
 
-        // 2. Fast 1.5s Network Fetch from Backend
-        val remoteArticles = withTimeoutOrNull(1500) {
+        // 2. Fast 4.0s Network Fetch from Backend
+        val remoteArticles = withTimeoutOrNull(4000) {
             try {
-                val response: List<Article> = client.get("$backendUrl/api/articles/trending").body()
+                val response: List<Article> = client.get("$backendUrl/api/articles/trending") {
+                    parameter("user_age", userAge)
+                }.body()
                 if (response.isNotEmpty()) {
                     _isOffline.value = false
                     val sorted = response.sortProcessedFirst()
@@ -247,7 +326,7 @@ class ArticleRepository(private val client: HttpClient) {
     }
 
     // --- Backend User Interaction Handlers (Save/Bookmark, Like, Share) ---
-    suspend fun toggleBookmarkOnServer(userIdentifier: String, articleId: String): List<String> {
+    suspend fun toggleBookmarkOnServer(userIdentifier: String, articleId: String): List<String>? {
         return try {
             val response: ToggleBookmarkRes = client.post("$backendUrl/api/user/bookmarks/toggle") {
                 contentType(ContentType.Application.Json)
@@ -256,7 +335,7 @@ class ArticleRepository(private val client: HttpClient) {
             response.bookmarks
         } catch (e: Exception) {
             println("TATTLE_DEBUG: Error toggling bookmark: ${e.message}")
-            emptyList()
+            null
         }
     }
 

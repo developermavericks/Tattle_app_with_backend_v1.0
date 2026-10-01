@@ -78,6 +78,8 @@ fun FeedScreen(
         }
     }
 
+    val userAge = preferences.ageGroup.toIntOrNull() ?: calculateAgeFromDob(preferences.dob) ?: 18
+
     // Instant 0ms seed initialization for immediate screen render
     val initialSeed = remember(activeTab) {
         when (activeTab) {
@@ -93,8 +95,8 @@ fun FeedScreen(
     LaunchedEffect(activeTab, preferences.bookmarks) {
         val remoteBatch = when (activeTab) {
             "saved" -> articleRepository.getArticlesByIdsFromBackend(preferences.bookmarks)
-            "for_you" -> articleRepository.getForYouArticles(userSectors)
-            else -> articleRepository.getArticlesBySector(activeTab)
+            "for_you" -> articleRepository.getForYouArticles(userSectors, userAge)
+            else -> articleRepository.getArticlesBySector(activeTab, userAge)
         }
 
         if (remoteBatch.isNotEmpty()) {
@@ -108,8 +110,8 @@ fun FeedScreen(
     LaunchedEffect(currentIndex, dynamicArticles.size, activeTab) {
         if (activeTab != "saved" && dynamicArticles.isNotEmpty() && (dynamicArticles.size - currentIndex <= 10)) {
             val fetchedBatch = when (activeTab) {
-                "for_you" -> articleRepository.getForYouArticles(emptyList())
-                else -> articleRepository.getArticlesBySector("all")
+                "for_you" -> articleRepository.getForYouArticles(emptyList(), userAge)
+                else -> articleRepository.getArticlesBySector("all", userAge)
             }
 
             val unseenNewCards = fetchedBatch.filter { !seenArticleIds.contains(it.id) }.sortProcessedFirst()

@@ -268,6 +268,55 @@ data class PollVoteResponse(
 )
 
 @Serializable
+data class MlFeedResponse(
+    val sector: String? = null,
+    val count: Int = 0,
+    val articles: List<MlArticleDto> = emptyList()
+)
+
+@Serializable
+data class MlArticleDto(
+    val id: Int? = null,
+    val article_id: String? = null,
+    val headline: String? = null,
+    val brief: String? = null,
+    val bullets_json: String? = null,
+    val why_it_matters: String? = null,
+    val full_text: String? = null,
+    val image_url: String? = null,
+    val age_bracket: String? = null,
+    val sector: String? = null,
+    val score: Float? = null,
+    val published_at: String? = null
+)
+
+fun mapMlArticleToDto(ml: MlArticleDto): ArticleDto {
+    val bullets: List<String> = try {
+        if (!ml.bullets_json.isNullOrBlank()) {
+            Json.decodeFromString(ml.bullets_json)
+        } else listOf("Key insight point 1.", "Key insight point 2.")
+    } catch (_: Exception) {
+        listOf("Key insight point 1.", "Key insight point 2.")
+    }
+
+    return ArticleDto(
+        id = "ml_" + (ml.article_id ?: ml.id?.toString() ?: System.currentTimeMillis().toString()),
+        category = ml.sector ?: "tech",
+        headline = ml.headline ?: "Breaking Headline",
+        hook = ml.brief ?: "Brief summary.",
+        brief = ml.brief ?: "Brief summary.",
+        bullets = bullets,
+        whyItMatters = ml.why_it_matters ?: "Impact analysis.",
+        fullText = ml.full_text ?: "Full text narrative.",
+        publisher = "Tattle Wire",
+        publishedAt = ml.published_at?.take(10) ?: "Today",
+        imageUrl = ml.image_url ?: "https://images.unsplash.com/photo-1518770660439-4636190af475",
+        likes = 1200,
+        views = 8500
+    )
+}
+
+@Serializable
 data class ArticleDto(
     val id: String,
     val category: String,
@@ -728,19 +777,58 @@ fun Application.module() {
             call.respond(scoredArticles.ifEmpty { articles })
         }
 
-        // --- 4. Sector Streams (16 Streams) ---
+        // --- 4. Sector Streams (16 Live Streams with ML Backend Proxy) ---
         get("/api/mobile/articles/{sector}") {
             val sector = call.parameters["sector"]?.lowercase() ?: "all"
-            val articles = transaction {
-                if (sector == "all" || sector == "for_you") {
+            val cleanSector = sector.replace(" ", "%20")
+
+            var articles = transaction {
+                if (cleanSector == "all" || cleanSector == "for_you") {
                     ArticlesTable.selectAll().limit(25).map { mapRowToArticle(it) }
                 } else {
                     ArticlesTable.selectAll()
-                        .where { ArticlesTable.category eq sector }
+                        .where { ArticlesTable.category eq cleanSector }
                         .limit(20)
                         .map { mapRowToArticle(it) }
                 }
             }
+
+            // Live ML Proxy: Fetch directly from ML Backend Port 8000 if local DB has fewer than 5 items
+            if (articles.size < 5) {
+                try {
+                    val querySector = if (cleanSector == "all" || cleanSector == "for_you") "tech" else cleanSector
+                    val mlResponse: MlFeedResponse = httpClient.get("http://127.0.0.1:8000/api/feed/$querySector").body()
+                    if (mlResponse.articles.isNotEmpty()) {
+                        val converted = mlResponse.articles.map { mapMlArticleToDto(it) }
+                        transaction {
+                            converted.forEach { art ->
+                                try {
+                                    ArticlesTable.insert { row ->
+                                        row[articleId] = art.id
+                                        row[category] = art.category
+                                        row[headline] = art.headline
+                                        row[hook] = art.hook
+                                        row[brief] = art.brief
+                                        row[bulletsJson] = Json.encodeToString(art.bullets)
+                                        row[whyItMatters] = art.whyItMatters
+                                        row[fullText] = art.fullText
+                                        row[publisher] = art.publisher
+                                        row[publishedAt] = art.publishedAt
+                                        row[imageUrl] = art.imageUrl
+                                        row[likes] = art.likes
+                                        row[views] = art.views
+                                        row[isBreaking] = art.isBreaking
+                                    }
+                                } catch (_: Exception) {}
+                            }
+                        }
+                        articles = converted
+                    }
+                } catch (e: Exception) {
+                    println("⚡ ML BACKEND PROXY NOTICE ($cleanSector): ${e.message}")
+                }
+            }
+
             call.respond(articles)
         }
 

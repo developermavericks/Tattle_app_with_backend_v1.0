@@ -53,8 +53,10 @@ fun TrendingScreen(
 
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
 
+    val userAge = preferences.ageGroup.toIntOrNull() ?: calculateAgeFromDob(preferences.dob) ?: 18
+
     LaunchedEffect(Unit) {
-        val remote = articleRepository.getTrendingArticles()
+        val remote = articleRepository.getTrendingArticles(userAge)
         if (remote.isNotEmpty()) {
             trendingArticles = remote
         }
