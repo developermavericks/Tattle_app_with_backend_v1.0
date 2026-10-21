@@ -26,6 +26,8 @@ buildkonfig {
         buildConfigField(FieldSpec.Type.STRING, "SUPABASE_URL", localProperties.getProperty("SUPABASE_URL") ?: "")
         buildConfigField(FieldSpec.Type.STRING, "SUPABASE_KEY", localProperties.getProperty("SUPABASE_KEY") ?: "")
         buildConfigField(FieldSpec.Type.STRING, "BASE_URL", localProperties.getProperty("BASE_URL") ?: "http://10.0.2.2:8081")
+        buildConfigField(FieldSpec.Type.STRING, "APP_KEY", localProperties.getProperty("APP_KEY") ?: "")
+        buildConfigField(FieldSpec.Type.STRING, "GUEST_MODE", localProperties.getProperty("GUEST_MODE") ?: "false")
     }
 }
 

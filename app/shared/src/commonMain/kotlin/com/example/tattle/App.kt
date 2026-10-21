@@ -71,12 +71,7 @@ fun App() {
 
         // App-wide Image Warmup: Pre-fetches & decodes ImageBitmaps into RAM as soon as app launches
         LaunchedEffect(Unit) {
-            val warmupList = MockData.articles.take(20) + MockData.getTrendingArticles()
-            warmupList.forEach { article ->
-                launch(Dispatchers.Default) {
-                    imageRepository.getOrFetchBitmapForArticle(article)
-                }
-            }
+            // (the feed pre-fetches the pictures of its own, real stories)
         }
 
         CompositionLocalProvider(

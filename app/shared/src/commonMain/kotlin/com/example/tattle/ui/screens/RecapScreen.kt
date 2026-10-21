@@ -25,7 +25,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tattle.data.RecapDto
+import com.example.tattle.data.UserSync
 import com.example.tattle.models.UserPreferences
+import org.koin.compose.koinInject
 import com.example.tattle.ui.theme.*
 
 data class SectorStat(
@@ -50,9 +53,17 @@ fun RecapScreen(
     val subTextColor = if (isDark) Color(0xFFB0B0B0) else Color(0xFF666666)
     val dividerColor = if (isDark) Color(0xFF2C2C2C) else Color(0xFFE5E7EB)
 
-    val cardsRead = preferences.totalCardsRead.coerceAtLeast(18)
-    val streakDays = preferences.streak.coerceAtLeast(12)
-    val estimatedMinutes = (cardsRead * 0.75f).toInt().coerceAtLeast(12)
+    // Real numbers from the server, computed from this user's own activity today (see GET /api/user/recap); zero until they read something.
+    val userSync = koinInject<UserSync>()
+    var recap by remember { mutableStateOf<RecapDto?>(null) }
+    var recapLoaded by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        recap = userSync.fetchRecap()
+        recapLoaded = true
+    }
+    val cardsRead = recap?.cardsRead ?: 0
+    val streakDays = recap?.streakDays ?: 0
+    val estimatedMinutes = recap?.minutes ?: 0
 
     // Palette for 16 sectors
     val sectorColors = listOf(
@@ -63,34 +74,31 @@ fun RecapScreen(
     )
 
     // All 16 Sectors data dynamically mapped
-    val allSectorsData = remember(preferences.interests) {
-        val userFavs = preferences.interests
+    val allSectorsData = remember(recap) {
+        val share = recap?.sectors.orEmpty().associate { it.slug to it.percentage.toFloat() }
         val baseList = listOf(
-            SectorStat("ai", "🤖", "AI & Robotics", 0.18f, sectorColors[0]),
-            SectorStat("tech", "💻", "Tech", 0.14f, sectorColors[1]),
-            SectorStat("world news", "📰", "World News", 0.11f, sectorColors[2]),
-            SectorStat("money and business", "💰", "Business", 0.09f, sectorColors[3]),
-            SectorStat("science and space", "🪐", "Space", 0.08f, sectorColors[4]),
-            SectorStat("climate and environment", "🌍", "Climate", 0.07f, sectorColors[5]),
-            SectorStat("geopolitics", "🌐", "Geopolitics", 0.06f, sectorColors[6]),
-            SectorStat("healthcare", "🏥", "Healthcare", 0.05f, sectorColors[7]),
-            SectorStat("gaming", "🎮", "Gaming", 0.04f, sectorColors[8]),
-            SectorStat("sports", "⚽", "Sports", 0.04f, sectorColors[9]),
-            SectorStat("lifestyle", "✨", "Lifestyle", 0.03f, sectorColors[10]),
-            SectorStat("startups", "🚀", "Startups", 0.03f, sectorColors[11]),
-            SectorStat("creator economy", "🤳", "Creators", 0.02f, sectorColors[12]),
-            SectorStat("education", "📚", "Education", 0.02f, sectorColors[13]),
-            SectorStat("pop culture", "🎶", "Pop Culture", 0.02f, sectorColors[14]),
-            SectorStat("media and entertainment", "🎬", "Media", 0.02f, sectorColors[15])
+            SectorStat("ai", "🤖", "AI & Robotics", (share["ai"] ?: 0f), sectorColors[0]),
+            SectorStat("tech", "💻", "Tech", (share["tech"] ?: 0f), sectorColors[1]),
+            SectorStat("world news", "📰", "World News", (share["world news"] ?: 0f), sectorColors[2]),
+            SectorStat("money and business", "💰", "Business", (share["money and business"] ?: 0f), sectorColors[3]),
+            SectorStat("science and space", "🪐", "Space", (share["science and space"] ?: 0f), sectorColors[4]),
+            SectorStat("climate and environment", "🌍", "Climate", (share["climate and environment"] ?: 0f), sectorColors[5]),
+            SectorStat("geopolitics", "🌐", "Geopolitics", (share["geopolitics"] ?: 0f), sectorColors[6]),
+            SectorStat("healthcare", "🏥", "Healthcare", (share["healthcare"] ?: 0f), sectorColors[7]),
+            SectorStat("gaming", "🎮", "Gaming", (share["gaming"] ?: 0f), sectorColors[8]),
+            SectorStat("sports", "⚽", "Sports", (share["sports"] ?: 0f), sectorColors[9]),
+            SectorStat("lifestyle", "✨", "Lifestyle", (share["lifestyle"] ?: 0f), sectorColors[10]),
+            SectorStat("startups", "🚀", "Startups", (share["startups"] ?: 0f), sectorColors[11]),
+            SectorStat("creator economy", "🤳", "Creators", (share["creator economy"] ?: 0f), sectorColors[12]),
+            SectorStat("education", "📚", "Education", (share["education"] ?: 0f), sectorColors[13]),
+            SectorStat("pop culture", "🎶", "Pop Culture", (share["pop culture"] ?: 0f), sectorColors[14]),
+            SectorStat("media and entertainment", "🎬", "Media", (share["media and entertainment"] ?: 0f), sectorColors[15])
         )
 
-        // Boost user's selected interests to top
-        baseList.sortedByDescending { stat ->
-            if (userFavs.contains(stat.slug)) stat.percentage + 0.10f else stat.percentage
-        }
+        baseList.sortedByDescending { it.percentage }
     }
 
-    val topInterest = allSectorsData.firstOrNull()?.name ?: "AI & Tech"
+    val hasReads = cardsRead > 0
 
     Column(
         modifier = Modifier
@@ -131,7 +139,7 @@ fun RecapScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.3f))
             ) {
                 Text(
-                    text = "DAILY RECAP COMPLETE ⚡",
+                    text = "TODAY'S RECAP ⚡",
                     color = Primary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -147,7 +155,8 @@ fun RecapScreen(
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "You've caught up on all major headlines. Here is your personalized reading analysis for today!",
+                text = if (recapLoaded && recap == null) "Can't reach the server right now. Connect to the same Wi-Fi as the Tattle PC to see your numbers."
+                       else "Your reading today, updated live as you read.",
                 color = subTextColor,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
@@ -202,7 +211,7 @@ fun RecapScreen(
                 MetricTile(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.EmojiEvents,
-                    value = "Top 5%",
+                    value = recap?.topPercent?.let { "Top $it%" } ?: "—",
                     label = "Reader Rank",
                     iconColor = Color(0xFF4CAF50),
                     cardBgColor = cardBgColor,
@@ -242,7 +251,7 @@ fun RecapScreen(
                         color = Primary
                     )
                     Text(
-                        text = "Your top interest today was $topInterest. You consumed 8 Executive Briefs in under $estimatedMinutes minutes!",
+                        text = recap?.summary?.takeIf { it.isNotBlank() } ?: "Read a few stories and your recap will appear here.",
                         fontSize = 12.sp,
                         color = textColor,
                         lineHeight = 16.sp
@@ -273,7 +282,7 @@ fun RecapScreen(
                         color = textColor
                     )
                     Text(
-                        text = "100% Total",
+                        text = if (hasReads) "100% Total" else "No reads yet today",
                         fontSize = 12.sp,
                         color = Primary,
                         fontWeight = FontWeight.Bold

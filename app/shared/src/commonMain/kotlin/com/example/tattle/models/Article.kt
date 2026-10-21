@@ -98,5 +98,7 @@ data class UserPreferences(
     val phoneNumber: String = "",
     val email: String = "",
     val dob: String = "",
-    val hasSeenTutorial: Boolean = false
+    val hasSeenTutorial: Boolean = false,
+    val seenIds: List<String> = emptyList(),      // every story the user swiped past (newest last, capped)
+    val genZMode: Boolean = false                  // "trendy" rewrite of newspaper stories
 )

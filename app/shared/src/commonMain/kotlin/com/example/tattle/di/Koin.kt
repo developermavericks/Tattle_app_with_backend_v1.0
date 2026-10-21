@@ -36,6 +36,10 @@ fun initKoin() = initKoin {}
 val commonModule = module {
     single { 
         HttpClient {
+            install(io.ktor.client.plugins.HttpTimeout) {
+                requestTimeoutMillis = 15_000
+                connectTimeoutMillis = 6_000
+            }
             install(HttpRedirect) {
                 checkHttpMethod = false
             }
@@ -47,6 +51,8 @@ val commonModule = module {
             }
             defaultRequest {
                 header("User-Agent", "Mozilla/5.0 (Linux; Android 10; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0")
+                if (com.example.tattle.PlatformConfig.APP_KEY.isNotBlank()) header("X-App-Key", com.example.tattle.PlatformConfig.APP_KEY)
+                com.example.tattle.data.AuthSession.token?.let { header("Authorization", "Bearer $it") }
             }
         }
     }
@@ -67,5 +73,6 @@ val commonModule = module {
     single { LoginRepository(get(), get()) }
     single { ImageRepository(get()) }
     single { ArticleRepository(get()) }
+    single { com.example.tattle.data.UserSync(get(), get(), get()) }
     viewModelOf(::AppViewModel)
 }

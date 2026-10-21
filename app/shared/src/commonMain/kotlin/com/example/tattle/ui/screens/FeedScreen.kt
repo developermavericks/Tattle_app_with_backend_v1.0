@@ -84,8 +84,7 @@ fun FeedScreen(
     val initialSeed = remember(activeTab) {
         when (activeTab) {
             "saved" -> articleRepository.getArticlesByIds(preferences.bookmarks)
-            "for_you" -> MockData.articles.sortProcessedFirst()
-            else -> MockData.getArticlesBySector(activeTab).sortProcessedFirst()
+            else -> emptyList()               // real stories only: the skeleton card shows until the server answers
         }
     }
     var dynamicArticles by remember(activeTab) { mutableStateOf(initialSeed) }
@@ -96,11 +95,11 @@ fun FeedScreen(
         val remoteBatch = when (activeTab) {
             "saved" -> articleRepository.getArticlesByIdsFromBackend(preferences.bookmarks)
             "for_you" -> articleRepository.getForYouArticles(userSectors, userAge)
-            else -> articleRepository.getArticlesBySector(activeTab, userAge)
+            else -> articleRepository.getArticlesBySector(activeTab, userAge, preferences.seenIds, preferences.genZMode)
         }
 
         if (remoteBatch.isNotEmpty()) {
-            val sortedBatch = remoteBatch.distinctBy { it.id }.sortProcessedFirst()
+            val sortedBatch = remoteBatch.distinctBy { it.id }          // keep the server's order: newspaper stories first, then Nexus
             dynamicArticles = sortedBatch
             seenArticleIds = sortedBatch.map { it.id }.toSet()
         }
@@ -111,10 +110,10 @@ fun FeedScreen(
         if (activeTab != "saved" && dynamicArticles.isNotEmpty() && (dynamicArticles.size - currentIndex <= 10)) {
             val fetchedBatch = when (activeTab) {
                 "for_you" -> articleRepository.getForYouArticles(emptyList(), userAge)
-                else -> articleRepository.getArticlesBySector("all", userAge)
+                else -> articleRepository.getArticlesBySector(activeTab, userAge, preferences.seenIds + seenArticleIds, preferences.genZMode)
             }
 
-            val unseenNewCards = fetchedBatch.filter { !seenArticleIds.contains(it.id) }.sortProcessedFirst()
+            val unseenNewCards = fetchedBatch.filter { !seenArticleIds.contains(it.id) }
             if (unseenNewCards.isNotEmpty()) {
                 dynamicArticles = dynamicArticles + unseenNewCards
                 seenArticleIds = seenArticleIds + unseenNewCards.map { it.id }
@@ -328,6 +327,7 @@ fun FeedScreen(
                             onOpenBrief = { onLaunchBrief(targetArticle) },
                             onOpenFull = { onOpenArticle(targetArticle) },
                             onSwipeLeft = {
+                                onUpdatePreferences(markSeen(preferences, targetArticle.id))
                                 proceedNext(
                                     currentIndex,
                                     filteredArticles.size,
@@ -344,7 +344,7 @@ fun FeedScreen(
                                 } else {
                                     preferences.readHistory
                                 }
-                                onUpdatePreferences(preferences.copy(readHistory = history))
+                                onUpdatePreferences(markSeen(preferences, targetArticle.id).copy(readHistory = history))
                                 proceedNext(
                                     currentIndex,
                                     filteredArticles.size,
@@ -356,6 +356,7 @@ fun FeedScreen(
                                 )
                             },
                             onSwipeUp = {
+                                onUpdatePreferences(markSeen(preferences, targetArticle.id))
                                 proceedNext(
                                     currentIndex,
                                     filteredArticles.size,
@@ -574,3 +575,7 @@ fun EmptyState(activeTab: String, language: String, onReset: () -> Unit) {
         }
     }
 }
+
+/** Remember that the user swiped past this story, so the server stops offering it (newest last, capped at 2000). */
+private fun markSeen(prefs: UserPreferences, id: String): UserPreferences =
+    if (prefs.seenIds.contains(id)) prefs else prefs.copy(seenIds = (prefs.seenIds + id).takeLast(2000))

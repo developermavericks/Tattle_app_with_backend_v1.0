@@ -93,18 +93,12 @@ fun FullView(
                     },
                     actions = {
                         IconButton(onClick = {
-                            coroutineScope.launch {
-                                articleRepository.recordShareOnServer(userIdentifier, article.id)
-                            }
-                            onShare()
+                            onShare()          // the share sheet records the share with the app the user picked
                         }) {
                             Icon(Icons.Default.Share, null, tint = textColor)
                         }
                         IconButton(onClick = {
-                            coroutineScope.launch {
-                                articleRepository.toggleBookmarkOnServer(userIdentifier, article.id)
-                            }
-                            onToggleBookmark()
+                            onToggleBookmark()          // AppViewModel reports the change to the server (once)
                         }) {
                             Icon(
                                 if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,

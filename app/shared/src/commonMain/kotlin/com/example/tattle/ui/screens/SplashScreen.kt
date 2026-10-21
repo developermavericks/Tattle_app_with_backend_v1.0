@@ -201,6 +201,15 @@ fun SplashScreen(
                         color = Color.White
                     )
                 }
+
+                if (com.example.tattle.PlatformConfig.GUEST_MODE) {
+                    androidx.compose.material3.TextButton(
+                        onClick = { onGetStarted(true) },          // true = go to onboarding (date of birth, interests)
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                    ) {
+                        Text("Continue as guest", color = subTextColor, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -380,6 +389,7 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) 
                                                 val result = loginRepository.generateOtp("$countryCode$phoneNumber")
                                                 if (result.isSuccess) {
                                                     isOtpSent = true
+                                                    result.getOrNull()?.takeIf { it.startsWith("Dev code") }?.let { error = it }
                                                     isLoading = false
                                                 } else {
                                                     error = result.exceptionOrNull()?.message ?: "Failed to send OTP"
@@ -600,6 +610,7 @@ fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) 
                                             val result = loginRepository.generateEmailOtp(email)
                                             if (result.isSuccess) {
                                                 isOtpSent = true
+                                                result.getOrNull()?.takeIf { it.startsWith("Dev code") }?.let { error = it }
                                             } else {
                                                 error = result.exceptionOrNull()?.message ?: "Failed to send code"
                                             }

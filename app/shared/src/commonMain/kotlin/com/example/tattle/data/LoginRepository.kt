@@ -55,6 +55,7 @@ class LoginRepository(
             }.body()
 
             if (response.success && response.token != null) {
+                AuthSession.save(response.token)
                 Result.success(response.token)
             } else {
                 Result.failure(Exception(response.message ?: "Google login failed"))
@@ -72,13 +73,12 @@ class LoginRepository(
             }.body()
             
             if (response.success) {
-                Result.success("OTP sent")
+                Result.success(response.message ?: "OTP sent")       // on the LAN pilot the message carries the code: "Dev code: 123456"
             } else {
                 Result.failure(Exception(response.message))
             }
         } catch (_: Exception) {
-            // Local simulation fallback
-            Result.success("Simulated OTP sent")
+            Result.failure(Exception("Cannot reach the Tattle server. Check that your phone is on the same Wi-Fi as the PC."))
         }
     }
 
@@ -90,6 +90,7 @@ class LoginRepository(
             }.body()
 
             if (response.success && response.token != null) {
+                AuthSession.save(response.token)                      // from here every request is this user's
                 val serverProfile = fetchProfileFromServer(phone = phone).getOrNull()
                 val currentPrefs = preferencesRepository.userPreferences.value
 
@@ -120,18 +121,7 @@ class LoginRepository(
                 Result.failure(Exception(response.message ?: "OTP verification failed"))
             }
         } catch (_: Exception) {
-            // Local simulation fallback
-            val currentPrefs = preferencesRepository.userPreferences.value
-            val needsOnboarding = currentPrefs.dob.isBlank() || currentPrefs.ageGroup.isBlank()
-
-            val finalPrefs = if (!needsOnboarding) {
-                currentPrefs.copy(phoneNumber = phone, isOnboarded = true)
-            } else {
-                currentPrefs.copy(phoneNumber = phone, dob = "", ageGroup = "", isOnboarded = false)
-            }
-
-            preferencesRepository.updatePreferences(finalPrefs)
-            Result.success(needsOnboarding)
+            Result.failure(Exception("Cannot reach the Tattle server. Check your Wi-Fi and try again."))
         }
     }
 
@@ -143,13 +133,12 @@ class LoginRepository(
             }.body()
             
             if (response.success) {
-                Result.success("OTP sent")
+                Result.success(response.message ?: "OTP sent")
             } else {
                 Result.failure(Exception(response.message))
             }
         } catch (_: Exception) {
-            // Local simulation fallback
-            Result.success("Simulated OTP sent")
+            Result.failure(Exception("Cannot reach the Tattle server. Check that your phone is on the same Wi-Fi as the PC."))
         }
     }
 
@@ -161,6 +150,7 @@ class LoginRepository(
             }.body()
 
             if (response.success && response.token != null) {
+                AuthSession.save(response.token)
                 val serverProfile = fetchProfileFromServer(email = email).getOrNull()
                 val currentPrefs = preferencesRepository.userPreferences.value
 
@@ -191,18 +181,7 @@ class LoginRepository(
                 Result.failure(Exception(response.message ?: "Email verification failed"))
             }
         } catch (_: Exception) {
-            // Local simulation fallback
-            val currentPrefs = preferencesRepository.userPreferences.value
-            val needsOnboarding = currentPrefs.dob.isBlank() || currentPrefs.ageGroup.isBlank()
-
-            val finalPrefs = if (!needsOnboarding) {
-                currentPrefs.copy(email = email, isOnboarded = true)
-            } else {
-                currentPrefs.copy(email = email, dob = "", ageGroup = "", isOnboarded = false)
-            }
-
-            preferencesRepository.updatePreferences(finalPrefs)
-            Result.success(needsOnboarding)
+            Result.failure(Exception("Cannot reach the Tattle server. Check your Wi-Fi and try again."))
         }
     }
 

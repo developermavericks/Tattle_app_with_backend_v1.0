@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -58,9 +59,25 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    // Release signing: the key lives OUTSIDE the repository. Point TATTLE_KEYSTORE_PROPS at a keystore.properties file
+    // (storeFile, storePassword, keyAlias, keyPassword); without it the release build is simply unsigned.
+    val signingProps = Properties().also { props ->
+        System.getenv("TATTLE_KEYSTORE_PROPS")?.let { path -> file(path).takeIf { it.exists() }?.inputStream()?.use(props::load) }
+    }
+    signingConfigs {
+        if (signingProps.containsKey("storeFile")) {
+            create("release") {
+                storeFile = file(signingProps.getProperty("storeFile"))
+                storePassword = signingProps.getProperty("storePassword")
+                keyAlias = signingProps.getProperty("keyAlias")
+                keyPassword = signingProps.getProperty("keyPassword")
+            }
+        }
+    }
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
     compileOptions {

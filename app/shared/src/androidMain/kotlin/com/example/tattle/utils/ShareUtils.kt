@@ -6,6 +6,7 @@ import com.example.tattle.models.Article
 
 actual fun shareArticleContent(article: Article, platform: String) {
     val activity = currentActivity ?: return
+    try { org.koin.core.context.GlobalContext.get().get<com.example.tattle.data.UserSync>().recordShare(article.id, platform.lowercase()) } catch (_: Exception) { }
     val cardText = """
 ┌──────────────────────────────┐
 │  ⚡ TATTLE DIGEST
@@ -16,7 +17,7 @@ actual fun shareArticleContent(article: Article, platform: String) {
 │
 │  📰 ${article.publisher} • ${article.publishedAt}
 ├──────────────────────────────┤
-│  👉 View Card: https://tattle.app/story/${article.id}
+│  👉 View Card: ${com.example.tattle.PlatformConfig.BASE_URL}/story/${article.id}
 └──────────────────────────────┘
     """.trimIndent()
 

@@ -49,7 +49,7 @@ fun TrendingScreen(
     val language = LocalAppLanguage.current
     val articleRepository = koinInject<ArticleRepository>()
     val imageRepository = koinInject<ImageRepository>()
-    var trendingArticles by remember { mutableStateOf(MockData.getTrendingArticles().sortProcessedFirst()) }
+    var trendingArticles by remember { mutableStateOf<List<com.example.tattle.models.Article>>(emptyList()) }
 
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
 
