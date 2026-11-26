@@ -38,6 +38,9 @@ import com.example.tattle.data.LoginRepository
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.graphics.Brush
 import com.example.tattle.ui.components.Logo
+import com.example.tattle.ui.components.appearOnEnter
+import com.example.tattle.ui.components.pressScale
+import com.example.tattle.utils.Haptics
 import com.example.tattle.ui.theme.LocalAppLanguage
 import com.example.tattle.ui.theme.LocalStrings
 import com.example.tattle.ui.theme.Primary
@@ -122,8 +125,9 @@ fun SplashScreen(
             ) {
                 // Google Login
                 Button(
-                    onClick = { showGoogleLogin = true },
+                    onClick = { Haptics.light(); showGoogleLogin = true },
                     modifier = Modifier
+                        .appearOnEnter(0).pressScale()
                         .fillMaxWidth()
                         .height(56.dp)
                         .padding(vertical = 2.dp),
@@ -152,8 +156,9 @@ fun SplashScreen(
 
                 // Phone Login
                 Button(
-                    onClick = { showPhoneLogin = true },
+                    onClick = { Haptics.light(); showPhoneLogin = true },
                     modifier = Modifier
+                        .appearOnEnter(1).pressScale()
                         .fillMaxWidth()
                         .height(56.dp)
                         .padding(vertical = 2.dp),
@@ -182,8 +187,9 @@ fun SplashScreen(
 
                 // Email Login
                 Button(
-                    onClick = { showEmailLogin = true },
+                    onClick = { Haptics.light(); showEmailLogin = true },
                     modifier = Modifier
+                        .appearOnEnter(2).pressScale()
                         .fillMaxWidth()
                         .height(56.dp)
                         .padding(vertical = 2.dp),
@@ -202,14 +208,6 @@ fun SplashScreen(
                     )
                 }
 
-                if (com.example.tattle.PlatformConfig.GUEST_MODE) {
-                    androidx.compose.material3.TextButton(
-                        onClick = { onGetStarted(true) },          // true = go to onboarding (date of birth, interests)
-                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
-                    ) {
-                        Text("Continue as guest", color = subTextColor, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    }
-                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -266,7 +264,14 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) 
     var isOtpSent by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var devCode by remember { mutableStateOf<String?>(null) }           // shown until sign-in finishes, not cleared by typing the code
     val scope = rememberCoroutineScope()
+
+    // Once the code has been requested, Android may offer to read it from the incoming SMS (one dialog, that one message only)
+    DisposableEffect(isOtpSent) {
+        if (isOtpSent) com.example.tattle.utils.startOtpAutofill { code -> otp = code }
+        onDispose { com.example.tattle.utils.stopOtpAutofill() }
+    }
 
     val infiniteTransition = rememberInfiniteTransition(label = "bounce")
     val bounceScale by infiniteTransition.animateFloat(
@@ -389,7 +394,7 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) 
                                                 val result = loginRepository.generateOtp("$countryCode$phoneNumber")
                                                 if (result.isSuccess) {
                                                     isOtpSent = true
-                                                    result.getOrNull()?.takeIf { it.startsWith("Dev code") }?.let { error = it }
+                                                    result.getOrNull()?.takeIf { it.startsWith("Dev code") }?.let { devCode = it }
                                                     isLoading = false
                                                 } else {
                                                     error = result.exceptionOrNull()?.message ?: "Failed to send OTP"
@@ -470,7 +475,17 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) 
                                         }
                                     }
                                 }
-                                
+
+                                if (devCode != null) {
+                                    Text(
+                                        devCode ?: "",
+                                        color = Primary,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(top = 8.dp, start = 8.dp)
+                                    )
+                                }
+
                                 AnimatedVisibility(
                                     visible = error != null,
                                     enter = expandVertically() + fadeIn(),
@@ -483,9 +498,9 @@ fun PhoneLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) 
                                         modifier = Modifier.padding(top = 8.dp, start = 8.dp)
                                     )
                                 }
-                                
+
                                 Spacer(modifier = Modifier.height(24.dp))
-                                
+
                                 val isOtpReady = otp.length == 6
                                 Button(
                                     onClick = { 
@@ -545,6 +560,7 @@ fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) 
     var isOtpSent by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var devCode by remember { mutableStateOf<String?>(null) }           // shown until sign-in finishes, not cleared by typing the code
     val scope = rememberCoroutineScope()
 
     AlertDialog(
@@ -610,7 +626,7 @@ fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) 
                                             val result = loginRepository.generateEmailOtp(email)
                                             if (result.isSuccess) {
                                                 isOtpSent = true
-                                                result.getOrNull()?.takeIf { it.startsWith("Dev code") }?.let { error = it }
+                                                result.getOrNull()?.takeIf { it.startsWith("Dev code") }?.let { devCode = it }
                                             } else {
                                                 error = result.exceptionOrNull()?.message ?: "Failed to send code"
                                             }
@@ -675,12 +691,15 @@ fun EmailLoginOverlay(onDismiss: () -> Unit, onLoginSuccess: (Boolean) -> Unit) 
                                 }
                             }
 
+                            if (devCode != null) {
+                                Text(devCode!!, color = Primary, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+                            }
                             if (error != null) {
                                 Text(error!!, color = Primary, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
                             }
-                            
+
                             Spacer(modifier = Modifier.height(24.dp))
-                            
+
                             val isOtpReady = otp.length == 6
                             Button(
                                 onClick = { 

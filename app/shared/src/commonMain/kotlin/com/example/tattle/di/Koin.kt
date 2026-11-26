@@ -72,7 +72,7 @@ val commonModule = module {
     single<PreferencesRepository> { SettingsPreferencesRepository(get()) }
     single { LoginRepository(get(), get()) }
     single { ImageRepository(get()) }
-    single { ArticleRepository(get()) }
+    single { ArticleRepository(get(), get()) }
     single { com.example.tattle.data.UserSync(get(), get(), get()) }
     viewModelOf(::AppViewModel)
 }

@@ -7,22 +7,55 @@ import com.example.tattle.models.Article
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.http.isSuccess
+import com.example.tattle.utils.DiskCache
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
 
+/** Decoded pictures, newest use last, evicting the oldest once they add up to more than `maxBytes` (a long reading session must not run a phone out of memory). */
+private class BitmapLru(private val maxBytes: Long) {
+    private val map = LinkedHashMap<String, ImageBitmap>()
+    private var bytes = 0L
+
+    private fun sizeOf(b: ImageBitmap) = b.width.toLong() * b.height * 4
+
+    fun get(key: String): ImageBitmap? {
+        val v = map.remove(key) ?: return null
+        map[key] = v
+        return v
+    }
+
+    fun put(key: String, value: ImageBitmap) {
+        map.remove(key)?.let { bytes -= sizeOf(it) }
+        map[key] = value
+        bytes += sizeOf(value)
+        while (bytes > maxBytes && map.size > 1) {
+            val oldest = map.entries.first()
+            bytes -= sizeOf(oldest.value)
+            map.remove(oldest.key)
+        }
+    }
+}
+
 class ImageRepository(private val client: HttpClient) {
-    var envatoApiToken: String = "OP6NdHQ7vl9vb4TNaOqloZdaf0c9A2UF"
+    // Picture search happens on the server now (clean full-size photos, resized for this phone); no provider keys live in the app.
+    var envatoApiToken: String = ""
     private val backendUrl = PlatformConfig.BASE_URL
-    private val pixabayApiKey = "57288715-79ef2e54282e42425a088bb2e"
+    private val pixabayApiKey = ""
     private val pixabayBaseUrl = "https://pixabay.com/api/"
     private val envatoBaseUrl = "https://api.envato.com/v1/discovery/search/search/item"
 
     // Single-Query Repository Cache: Keyed by article ID or Query
     private val imageCache = mutableMapOf<String, String>()
-    private val bitmapCache = mutableMapOf<String, ImageBitmap>()
+    private val bitmapLru = BitmapLru(64L * 1024 * 1024)
     private val cacheMutex = Mutex()
 
     // Reliable Unsplash Stock Photos mapped by Category
@@ -48,6 +81,7 @@ class ImageRepository(private val client: HttpClient) {
     fun sanitizeImageUrl(url: String?): String? {
         if (url.isNullOrBlank()) return null
         var clean = url.trim()
+        if (clean.startsWith("/")) return PlatformConfig.BASE_URL.trimEnd('/') + clean       // a picture served by our own server (resized WebP)
         if (clean.startsWith("//")) {
             clean = "https:$clean"
         } else if (clean.startsWith("http://")) {
@@ -65,7 +99,7 @@ class ImageRepository(private val client: HttpClient) {
     suspend fun getOrFetchBitmapForArticle(article: Article): ImageBitmap? = withContext(NonCancellable) {
         // 1. Check bitmap cache
         cacheMutex.withLock {
-            val cached = bitmapCache[article.id]
+            val cached = bitmapLru.get(article.id)
             if (cached != null) return@withContext cached
         }
 
@@ -82,17 +116,57 @@ class ImageRepository(private val client: HttpClient) {
 
         if (bitmap != null) {
             cacheMutex.withLock {
-                bitmapCache[article.id] = bitmap
+                bitmapLru.put(article.id, bitmap)
             }
         }
 
         return@withContext bitmap
     }
 
+    /** The decoded picture if it is already in memory (no waiting): lets a card show instantly with no spinner and no flash. */
+    fun peekBitmap(articleId: String): ImageBitmap? =
+        if (cacheMutex.tryLock()) {
+            try { bitmapLru.get(articleId) } finally { cacheMutex.unlock() }
+        } else null
+
+    /** Downloads the pictures of these stories to the phone (not decoded, three at a time), so they are there when the connection is not. */
+    suspend fun warmDisk(articles: List<Article>) {
+        val gate = Semaphore(3)
+        coroutineScope {
+            articles.forEach { a ->
+                launch {
+                    gate.withPermit {
+                        try {
+                            val url = sanitizeImageUrl(a.imageUrl.takeIf { it.isNotBlank() && !it.contains("picsum") }) ?: return@withPermit
+                            if (DiskCache.has(url)) return@withPermit
+                            val response = client.get(url)
+                            if (response.status.isSuccess()) {
+                                val bytes: ByteArray = response.body()
+                                if (bytes.size > 1024) DiskCache.write(url, bytes)
+                            }
+                        } catch (_: Exception) { }
+                    }
+                }
+            }
+        }
+    }
+
+    /** Any picture by address (used by the ads the admin dashboard publishes). */
+    suspend fun fetchBitmapFromUrl(url: String): ImageBitmap? = fetchImageBitmap(url)
+
+    /** Pictures already on the phone are used first (no connection needed); a downloaded one is stored once it has decoded properly. */
     private suspend fun fetchImageBitmap(url: String): ImageBitmap? {
         return try {
-            val bytes: ByteArray = client.get(url).body()
-            bytes.decodeToImageBitmap()
+            val stored = withContext(Dispatchers.Default) { DiskCache.read(url) }
+            if (stored != null) {
+                try { return withContext(Dispatchers.Default) { stored.decodeToImageBitmap() } } catch (_: Exception) { DiskCache.remove(url) }     // a damaged file is dropped
+            }
+            val response = client.get(url)
+            if (!response.status.isSuccess()) return null
+            val bytes: ByteArray = response.body()
+            val bitmap = withContext(Dispatchers.Default) { bytes.decodeToImageBitmap() }          // decoding a photo takes tens of milliseconds: never on the UI thread
+            withContext(Dispatchers.Default) { DiskCache.write(url, bytes) }
+            bitmap
         } catch (e: Exception) {
             println("TATTLE_DEBUG: Direct bitmap fetch failed for '$url': ${e.message}")
             null

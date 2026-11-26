@@ -12,6 +12,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.LocationOff
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.*
@@ -31,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tattle.data.LoginRepository
 import com.example.tattle.models.NotificationsPrefs
+import com.example.tattle.ui.components.pressScale
 import com.example.tattle.models.UserPreferences
 import com.example.tattle.ui.theme.*
 import kotlinx.coroutines.launch
@@ -116,9 +119,12 @@ fun OnboardingScreen(
 ) {
     val scope = rememberCoroutineScope()
     val loginRepository = koinInject<LoginRepository>()
+    val userSync = koinInject<com.example.tattle.data.UserSync>()
     var step by remember { mutableStateOf(1) }
     var dob by remember { mutableStateOf("") }
     var notificationsEnabled by remember { mutableStateOf<Boolean?>(null) }
+    var locationEnabled by remember { mutableStateOf<Boolean?>(null) }
+    val usernameForm = remember { UsernameForm() }
 
     val calculatedAge = calculateAgeFromDob(dob)
 
@@ -140,11 +146,15 @@ fun OnboardingScreen(
             OnboardingFooter(
                 step = step,
                 canGoNext = when (step) {
-                    1 -> dob.length == 8 && calculatedAge != null
+                    1 -> usernameForm.ready
+                    2 -> dob.length == 8 && calculatedAge != null
                     else -> true
                 },
                 onNext = {
-                    if (step < 2) {
+                    if (step == 1) {
+                        scope.launch { if (usernameForm.claim(userSync)) step = 2 }               // the username is reserved for this person before moving on
+                    } else if (step < 4) {
+                        if (step == 3) userSync.chooseLocation(locationEnabled == true)      // the system permission dialog appears here, before the notification screen
                         step++
                     } else {
                         val prefs = UserPreferences(
@@ -153,9 +163,9 @@ fun OnboardingScreen(
                             interests = defaultSectors,
                             language = "English",
                             notifications = NotificationsPrefs(
-                                dailyBriefings = notificationsEnabled ?: true,
-                                breakingAlerts = notificationsEnabled ?: true,
-                                streaks = notificationsEnabled ?: true
+                                dailyBriefings = notificationsEnabled == true,
+                                breakingAlerts = notificationsEnabled == true,
+                                streaks = notificationsEnabled == true
                             ),
                             streak = 1,
                             totalCardsRead = 0,
@@ -166,15 +176,12 @@ fun OnboardingScreen(
                             sensitivity = "Standard",
                             lastReadDate = null,
                             dob = dob,
+                            name = usernameForm.name.trim(),
+                            username = usernameForm.username,
                             hasSeenTutorial = false
                         )
-                        scope.launch {
-                            loginRepository.syncProfileWithServer(
-                                dob = dob,
-                                age = calculatedAge,
-                                notificationsEnabled = notificationsEnabled ?: true
-                            )
-                        }
+                        userSync.saveProfileInBackground(dob, calculatedAge, notificationsEnabled == true)      // not tied to this screen's lifetime; an untouched bell means "no"
+                        userSync.chooseNotifications(notificationsEnabled == true)
                         onComplete(prefs)
                     }
                 }
@@ -189,11 +196,10 @@ fun OnboardingScreen(
             AnimatedContent(
                 targetState = step,
                 transitionSpec = {
-                    if (targetState > initialState) {
-                        (slideInHorizontally { it } + fadeIn()).togetherWith(slideOutHorizontally { -it } + fadeOut())
-                    } else {
-                        (slideInHorizontally { -it } + fadeIn()).togetherWith(slideOutHorizontally { it } + fadeOut())
-                    }.using(SizeTransform(clip = false))
+                    val forward = targetState > initialState
+                    (slideInHorizontally(spring(dampingRatio = 0.9f, stiffness = 380f)) { if (forward) it / 2 else -it / 2 } + fadeIn(tween(220)))
+                        .togetherWith(slideOutHorizontally(tween(240, easing = FastOutSlowInEasing)) { if (forward) -it / 3 else it / 3 } + fadeOut(tween(150)))
+                        .using(SizeTransform(clip = false))
                 },
                 label = "OnboardingStepAnimation"
             ) { targetStep ->
@@ -205,12 +211,17 @@ fun OnboardingScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     when (targetStep) {
-                        1 -> DobAgeStep(
+                        1 -> UsernameStep(form = usernameForm, userSync = userSync)
+                        2 -> DobAgeStep(
                             dob = dob,
                             calculatedAge = calculatedAge,
                             onDobChange = { if (it.length <= 8) dob = it.filter { c -> c.isDigit() } }
                         )
-                        2 -> NotificationStep(
+                        3 -> LocationStep(
+                            isEnabled = locationEnabled == true,
+                            onToggle = { locationEnabled = !(locationEnabled ?: false) }
+                        )
+                        4 -> NotificationStep(
                             isEnabled = notificationsEnabled == true,
                             onToggle = { notificationsEnabled = !(notificationsEnabled ?: false) }
                         )
@@ -246,7 +257,7 @@ fun OnboardingHeader(step: Int, onBack: () -> Unit) {
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(step / 2f)
+                        .fillMaxWidth(step / 4f)
                         .fillMaxHeight()
                         .clip(CircleShape)
                         .background(Primary)
@@ -269,12 +280,15 @@ fun OnboardingFooter(
             .fillMaxWidth()
             .padding(24.dp)
     ) {
+        val pressSource = com.example.tattle.ui.components.rememberPressSource()
         Button(
             onClick = onNext,
             enabled = canGoNext,
+            interactionSource = pressSource,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(56.dp)
+                .pressScale(pressSource),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF232323),
                 contentColor = Color.White,
@@ -284,7 +298,7 @@ fun OnboardingFooter(
             shape = RoundedCornerShape(28.dp)
         ) {
             Text(
-                text = if (step == 2) "Finish" else "Next",
+                text = if (step == 4) "Finish" else "Next",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
@@ -406,7 +420,7 @@ fun DobAgeStep(dob: String, calculatedAge: Int?, onDobChange: (String) -> Unit) 
                     )
                 } else {
                     Text(
-                        text = "Enter your date if birth above",
+                        text = "Enter your date of birth above",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.Gray
@@ -443,6 +457,58 @@ class DateVisualTransformation : VisualTransformation {
         }
 
         return TransformedText(androidx.compose.ui.text.AnnotatedString(out), offsetMapping)
+    }
+}
+
+@Composable
+fun LocationStep(isEnabled: Boolean, onToggle: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Stories Near You",
+            color = Color.Black,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = if (!isEnabled) "Allow your location so we can show you stories from your city and nearby."
+            else "You are all set! Location enabled.",
+            color = Color.Black,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 48.dp),
+            textAlign = TextAlign.Center
+        )
+
+        Box(
+            modifier = Modifier
+                .size(200.dp)
+                .clip(CircleShape)
+                .background(if (isEnabled) Primary else Color(0xFFF5F5F5))
+                .clickable { onToggle() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isEnabled) Icons.Default.LocationOn else Icons.Default.LocationOff,
+                contentDescription = "Location",
+                modifier = Modifier.size(100.dp),
+                tint = if (isEnabled) Color.White else Color.Gray
+            )
+        }
+
+        Text(
+            text = "Tap the circle to turn it on or off. You can change this any time in Settings.",
+            color = Color.Gray,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+            textAlign = TextAlign.Center
+        )
     }
 }
 

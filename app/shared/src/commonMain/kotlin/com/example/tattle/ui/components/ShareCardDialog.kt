@@ -257,12 +257,14 @@ fun ShareChip(
                 .border(1.dp, Color.White.copy(alpha = 0.8f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
+            // Real brand marks (from FontAwesome Brands, same font the admin dashboard already ships), not generic
+            // Material icons standing in for them (the old "discord" chip was literally a game-controller icon).
             when (brandType) {
-                "whatsapp" -> Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "WhatsApp", tint = Color.White, modifier = Modifier.size(20.dp))
-                "telegram" -> Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Telegram", tint = Color.White, modifier = Modifier.size(18.dp))
-                "discord" -> Icon(Icons.Default.SportsEsports, contentDescription = "Discord", tint = Color.White, modifier = Modifier.size(20.dp))
-                "facebook" -> Icon(Icons.Default.ThumbUp, contentDescription = "Facebook", tint = Color.White, modifier = Modifier.size(18.dp))
-                "twitter" -> Icon(Icons.Default.Close, contentDescription = "X", tint = Color.White, modifier = Modifier.size(18.dp))
+                "whatsapp" -> Image(painterResource(Res.drawable.share_whatsapp), contentDescription = "WhatsApp", colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(20.dp))
+                "telegram" -> Image(painterResource(Res.drawable.share_telegram), contentDescription = "Telegram", colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(20.dp))
+                "discord" -> Image(painterResource(Res.drawable.share_discord), contentDescription = "Discord", colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(20.dp))
+                "facebook" -> Image(painterResource(Res.drawable.share_facebook), contentDescription = "Facebook", colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(20.dp))
+                "twitter" -> Image(painterResource(Res.drawable.share_twitter), contentDescription = "X", colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(20.dp))
                 else -> Icon(Icons.Default.Share, contentDescription = "More", tint = Color.White, modifier = Modifier.size(18.dp))
             }
         }

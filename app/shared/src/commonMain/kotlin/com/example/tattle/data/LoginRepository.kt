@@ -32,6 +32,7 @@ data class UpdateProfileData(
 data class UserProfileData(
     val id: Int? = null,
     val name: String? = null,
+    val username: String? = null,
     val email: String? = null,
     val phone: String? = null,
     val dob: String? = null,
@@ -104,7 +105,13 @@ class LoginRepository(
                         phoneNumber = phone,
                         dob = userDob,
                         ageGroup = userAgeGroup,
-                        isOnboarded = true
+                        isOnboarded = true,
+                        // Restored right away so a reinstall or new device lands back on the real profile, not blank defaults,
+                        // instead of waiting for the next app start's validateSession() to catch up.
+                        name = serverProfile?.name?.takeIf { it.isNotBlank() } ?: currentPrefs.name,
+                        username = serverProfile?.username?.takeIf { it.isNotBlank() } ?: currentPrefs.username,
+                        isDarkMode = serverProfile?.isDarkMode ?: currentPrefs.isDarkMode,
+                        language = serverProfile?.language?.takeIf { it.isNotBlank() } ?: currentPrefs.language
                     )
                 } else {
                     currentPrefs.copy(
@@ -164,7 +171,13 @@ class LoginRepository(
                         email = email,
                         dob = userDob,
                         ageGroup = userAgeGroup,
-                        isOnboarded = true
+                        isOnboarded = true,
+                        // Restored right away so a reinstall or new device lands back on the real profile, not blank defaults,
+                        // instead of waiting for the next app start's validateSession() to catch up.
+                        name = serverProfile?.name?.takeIf { it.isNotBlank() } ?: currentPrefs.name,
+                        username = serverProfile?.username?.takeIf { it.isNotBlank() } ?: currentPrefs.username,
+                        isDarkMode = serverProfile?.isDarkMode ?: currentPrefs.isDarkMode,
+                        language = serverProfile?.language?.takeIf { it.isNotBlank() } ?: currentPrefs.language
                     )
                 } else {
                     currentPrefs.copy(

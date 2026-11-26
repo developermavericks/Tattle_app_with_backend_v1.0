@@ -64,8 +64,6 @@ fun FullView(
     }
 
     var readerMode by remember(initialMode) { mutableStateOf(initialMode) }
-    var likesCount by remember { mutableStateOf(article.likes) }
-    var isLiked by remember { mutableStateOf(false) }
 
     val bgColor = if (isDark) DarkBackground else Color.White
     val textColor = if (isDark) DarkTextPrimary else Color.Black
@@ -223,29 +221,6 @@ fun FullView(
                     )
                 }
 
-                // Like Button connected to Backend
-                IconButton(onClick = {
-                    coroutineScope.launch {
-                        val newLikes = articleRepository.toggleLikeOnServer(userIdentifier, article.id)
-                        if (newLikes != null) {
-                            likesCount = newLikes
-                            isLiked = !isLiked
-                        } else {
-                            isLiked = !isLiked
-                            likesCount += if (isLiked) 1 else -1
-                        }
-                    }
-                }) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Icon(
-                            if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = "Like",
-                            tint = if (isLiked) Primary else subTextColor,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(text = "$likesCount", fontSize = 12.sp, color = subTextColor, fontWeight = FontWeight.SemiBold)
-                    }
-                }
             }
 
             HorizontalDivider(color = if (isDark) Color(0xFF2C2C2C) else Color(0xFFEEEEEE))

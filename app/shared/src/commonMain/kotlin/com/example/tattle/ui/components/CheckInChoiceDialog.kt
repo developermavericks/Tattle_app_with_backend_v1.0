@@ -25,7 +25,9 @@ import com.example.tattle.ui.theme.Primary
 fun CheckInChoiceDialog(
     onSelectWatchAd: () -> Unit,
     onSelectTakeSurvey: () -> Unit,
-    isDark: Boolean = false
+    isDark: Boolean = false,
+    adTitle: String = "Watch a short ad",
+    surveyTitle: String = "Take a quick survey"
 ) {
     val bgColor = if (isDark) DarkSurface else Color.White
     val textColor = if (isDark) Color.White else Color(0xFF1A1A1A)
@@ -40,7 +42,7 @@ fun CheckInChoiceDialog(
         contentAlignment = Alignment.Center
     ) {
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().popIn(),
             shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(containerColor = bgColor),
             elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
@@ -88,9 +90,11 @@ fun CheckInChoiceDialog(
                 }
 
                 // Option 1: Watch Short Ad (5s)
+                val adSource = rememberPressSource()
                 Card(
                     onClick = onSelectWatchAd,
-                    modifier = Modifier.fillMaxWidth(),
+                    interactionSource = adSource,
+                    modifier = Modifier.fillMaxWidth().pressScale(adSource),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = cardBg),
                     border = androidx.compose.foundation.BorderStroke(1.5.dp, Primary.copy(alpha = 0.35f))
@@ -127,10 +131,12 @@ fun CheckInChoiceDialog(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = "Watch 5-Sec Ad",
+                                    text = adTitle,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp,
-                                    color = textColor
+                                    color = textColor,
+                                    maxLines = 2,
+                                    modifier = Modifier.weight(1f).padding(end = 8.dp)
                                 )
                                 Surface(
                                     color = Primary.copy(alpha = 0.15f),
@@ -138,6 +144,8 @@ fun CheckInChoiceDialog(
                                 ) {
                                     Text(
                                         text = "FAST ⚡",
+                                        maxLines = 1,
+                                        softWrap = false,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Primary,
@@ -146,7 +154,7 @@ fun CheckInChoiceDialog(
                                 }
                             }
                             Text(
-                                text = "Simulated 5-second ad for instant access",
+                                text = "A short sponsored message, then your pass unlocks",
                                 fontSize = 12.sp,
                                 color = subTextColor,
                                 lineHeight = 16.sp
@@ -163,9 +171,11 @@ fun CheckInChoiceDialog(
                 }
 
                 // Option 2: Complete 4-Question Survey
+                val surveySource = rememberPressSource()
                 Card(
                     onClick = onSelectTakeSurvey,
-                    modifier = Modifier.fillMaxWidth(),
+                    interactionSource = surveySource,
+                    modifier = Modifier.fillMaxWidth().pressScale(surveySource),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = cardBg),
                     border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF2E7D32).copy(alpha = 0.35f))
@@ -202,10 +212,12 @@ fun CheckInChoiceDialog(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = "4-MCQ Survey",
+                                    text = surveyTitle,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp,
-                                    color = textColor
+                                    color = textColor,
+                                    maxLines = 2,
+                                    modifier = Modifier.weight(1f).padding(end = 8.dp)
                                 )
                                 Surface(
                                     color = Color(0xFF2E7D32).copy(alpha = 0.15f),
@@ -213,6 +225,8 @@ fun CheckInChoiceDialog(
                                 ) {
                                     Text(
                                         text = "NO ADS 📋",
+                                        maxLines = 1,
+                                        softWrap = false,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF1B5E20),
@@ -221,7 +235,7 @@ fun CheckInChoiceDialog(
                                 }
                             }
                             Text(
-                                text = "Answer 4 quick questions about reading preferences",
+                                text = "Answer a few quick questions and help us improve Tattle",
                                 fontSize = 12.sp,
                                 color = subTextColor,
                                 lineHeight = 16.sp

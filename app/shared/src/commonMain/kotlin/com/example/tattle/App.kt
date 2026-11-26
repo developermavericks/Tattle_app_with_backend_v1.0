@@ -1,7 +1,10 @@
 package com.example.tattle
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,6 +14,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,6 +41,7 @@ import org.koin.compose.viewmodel.koinViewModel
 sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
     data object Onboarding : Screen("onboarding")
+    data object Username : Screen("username")
     data object Feed : Screen("feed")
     data object Explore : Screen("explore")
     data object Trending : Screen("trending")
@@ -67,7 +72,23 @@ fun App() {
         val initialDestination = if (isAlreadyLoggedIn) Screen.Feed.route else Screen.Splash.route
         val navController = rememberNavController()
         val kamelConfig: KamelConfig = koinInject()
+        val userSync: com.example.tattle.data.UserSync = koinInject()
+        val appScope = rememberCoroutineScope()
+
+        // People who joined before usernames existed are asked for one, once
+        val needsUsername by userSync.needsUsername.collectAsState()
+        LaunchedEffect(needsUsername) {
+            if (needsUsername) navController.navigate(Screen.Username.route) { popUpTo(Screen.Feed.route) { inclusive = true } }
+        }
+
+        // The account was deleted on the server: back to login and onboarding
+        LaunchedEffect(Unit) {
+            viewModel.sessionEnded.collect {
+                navController.navigate(Screen.Splash.route) { popUpTo(0) { inclusive = true } }
+            }
+        }
         val imageRepository: ImageRepository = koinInject()
+        val articleRepository: com.example.tattle.data.ArticleRepository = koinInject()
 
         // App-wide Image Warmup: Pre-fetches & decodes ImageBitmaps into RAM as soon as app launches
         LaunchedEffect(Unit) {
@@ -86,6 +107,46 @@ fun App() {
                 var activeArticle by remember { mutableStateOf<Article?>(null) }
                 var activeBriefArticle by remember { mutableStateOf<Article?>(null) }
                 var shareDialogArticle by remember { mutableStateOf<Article?>(null) }
+
+                // Opened from a breaking-news notification (MainActivity set this on tap): fetch that one story and
+                // show it directly. Only once logged in/onboarded - otherwise left pending until the person gets there,
+                // since the key below includes isAlreadyLoggedIn and the effect re-runs when it changes.
+                val pendingArticleId = com.example.tattle.utils.PendingDeepLink.articleId
+                LaunchedEffect(pendingArticleId, isAlreadyLoggedIn) {
+                    val targetId = pendingArticleId ?: return@LaunchedEffect
+                    if (!isAlreadyLoggedIn) return@LaunchedEffect
+                    val fetched = runCatching { articleRepository.getArticlesByIdsFromBackend(listOf(targetId)) }.getOrNull()
+                    fetched?.firstOrNull()?.let { activeArticle = it }
+                    com.example.tattle.utils.PendingDeepLink.articleId = null
+                }
+
+                // what the person was doing, attached to a crash report so it can be reproduced
+                LaunchedEffect(currentRoute) {
+                    com.example.tattle.utils.Breadcrumbs.screen = currentRoute
+                    com.example.tattle.utils.Breadcrumbs.add("screen $currentRoute")
+                }
+
+                // Asked once, after onboarding, in plain words. Nothing is read from the phone before the person says yes.
+                var askLocation by remember { mutableStateOf(false) }
+                LaunchedEffect(currentRoute) {
+                    if (currentRoute == Screen.Feed.route && userSync.locationChoice == null) askLocation = true
+                }
+                if (askLocation) {
+                    AlertDialog(
+                        onDismissRequest = { userSync.locationChoice = "no"; askLocation = false },
+                        title = { Text("Stories near you?") },
+                        text = {
+                            Text("Allow Tattle to use your location to show stories from your city and nearby? " +
+                                "You can turn this off any time in Settings.")
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { askLocation = false; appScope.launch { userSync.enableLocation() } }) { Text("Allow") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { userSync.locationChoice = "no"; askLocation = false }) { Text("Not now") }
+                        }
+                    )
+                }
 
                 Scaffold(
                     bottomBar = {
@@ -106,6 +167,10 @@ fun App() {
                                     activeArticle = null
                                     activeBriefArticle = null
                                     shareDialogArticle = null
+
+                                    // Always return to the main stream here, even when a sector picked from Explore left the feed already on this route
+                                    // (the route-equality check below would otherwise skip the whole block and leave that sector's stream showing).
+                                    if (screen == Screen.Feed) viewModel.setFeedTab("for_you")
 
                                     if (currentRoute != screen.route) {
                                         if (screen == Screen.Feed) {
@@ -128,12 +193,18 @@ fun App() {
                         NavHost(
                             navController = navController,
                             startDestination = initialDestination,
-                            enterTransition = { 
-                                fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
+                            enterTransition = {
+                                if (targetState.destination.route in listOf(Screen.Settings.route, Screen.Recap.route))
+                                    slideInHorizontally(spring(dampingRatio = 0.9f, stiffness = 380f)) { it / 3 } + fadeIn(tween(200))       // pushed like on an iPhone
+                                else fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
                             },
-                            exitTransition = { 
-                                fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing))
-                            }
+                            exitTransition = {
+                                if (targetState.destination.route in listOf(Screen.Settings.route, Screen.Recap.route))
+                                    slideOutHorizontally(tween(260, easing = FastOutSlowInEasing)) { -it / 5 } + fadeOut(tween(200))           // the page underneath moves a little
+                                else fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing))
+                            },
+                            popEnterTransition = { slideInHorizontally(spring(dampingRatio = 0.9f, stiffness = 380f)) { -it / 5 } + fadeIn(tween(200)) },
+                            popExitTransition = { slideOutHorizontally(tween(240, easing = FastOutSlowInEasing)) { it / 3 } + fadeOut(tween(180)) }
                         ) {
                             composable(Screen.Splash.route) {
                                 SplashScreen(
@@ -143,6 +214,16 @@ fun App() {
                                         navController.navigate(nextRoute) {
                                             popUpTo(Screen.Splash.route) { inclusive = true }
                                         }
+                                    }
+                                )
+                            }
+                            composable(Screen.Username.route) {
+                                com.example.tattle.ui.screens.UsernameGateScreen(
+                                    initialName = preferences?.name ?: "",
+                                    onDone = { name, username ->
+                                        preferences?.let { viewModel.updatePreferences(it.copy(name = name, username = username)) }
+                                        userSync.usernameDone()
+                                        navController.navigate(Screen.Feed.route) { popUpTo(Screen.Username.route) { inclusive = true } }
                                     }
                                 )
                             }
@@ -250,8 +331,9 @@ fun App() {
 
                         AnimatedVisibility(
                             visible = activeBriefArticle != null,
-                            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                            enter = slideInVertically(spring(dampingRatio = 0.86f, stiffness = 420f)) { it / 3 } + fadeIn(tween(160)) +
+                                scaleIn(spring(dampingRatio = 0.86f, stiffness = 420f), initialScale = 0.94f),
+                            exit = slideOutVertically(tween(200, easing = FastOutLinearInEasing)) { it / 3 } + fadeOut(tween(160)) + scaleOut(tween(200), targetScale = 0.96f)
                         ) {
                             activeBriefArticle?.let { article ->
                                 BriefView(
@@ -280,8 +362,8 @@ fun App() {
 
                         AnimatedVisibility(
                             visible = activeArticle != null,
-                            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-                            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                            enter = slideInHorizontally(spring(dampingRatio = 0.9f, stiffness = 380f)) { it / 2 } + fadeIn(tween(160)),
+                            exit = slideOutHorizontally(tween(210, easing = FastOutLinearInEasing)) { it / 2 } + fadeOut(tween(160))
                         ) {
                             activeArticle?.let { article ->
                                 FullView(
@@ -317,6 +399,10 @@ fun BottomNav(
     onScreenSelected: (Screen) -> Unit,
 ) {
     val language = LocalAppLanguage.current
+    val select: (Screen) -> Unit = {
+        com.example.tattle.utils.Haptics.selection()
+        onScreenSelected(it)
+    }
     val unselectedColor = if (isDark) DarkTextMuted else TextMuted
     NavigationBar(
         containerColor = if (isDark) DarkSurface else Color.White,
@@ -325,8 +411,8 @@ fun BottomNav(
     ) {
         NavigationBarItem(
             selected = currentRoute == Screen.Feed.route,
-            onClick = { onScreenSelected(Screen.Feed) },
-            icon = { Icon(Icons.Default.Bolt, contentDescription = LocalStrings.get("for_you", language)) },
+            onClick = { select(Screen.Feed) },
+            icon = { NavIcon(selected = currentRoute == Screen.Feed.route) { Icon(Icons.Default.Bolt, contentDescription = LocalStrings.get("for_you", language)) } },
             label = { Text(LocalStrings.get("for_you", language), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Primary,
@@ -338,8 +424,8 @@ fun BottomNav(
         )
         NavigationBarItem(
             selected = currentRoute == Screen.Explore.route,
-            onClick = { onScreenSelected(Screen.Explore) },
-            icon = { Icon(Icons.Default.Explore, contentDescription = LocalStrings.get("explore", language)) },
+            onClick = { select(Screen.Explore) },
+            icon = { NavIcon(selected = currentRoute == Screen.Explore.route) { Icon(Icons.Default.Explore, contentDescription = LocalStrings.get("explore", language)) } },
             label = { Text(LocalStrings.get("explore", language), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Primary,
@@ -351,8 +437,8 @@ fun BottomNav(
         )
         NavigationBarItem(
             selected = currentRoute == Screen.Trending.route,
-            onClick = { onScreenSelected(Screen.Trending) },
-            icon = { Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = LocalStrings.get("trending", language)) },
+            onClick = { select(Screen.Trending) },
+            icon = { NavIcon(selected = currentRoute == Screen.Trending.route) { Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = LocalStrings.get("trending", language)) } },
             label = { Text(LocalStrings.get("trending", language), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Primary,
@@ -364,8 +450,8 @@ fun BottomNav(
         )
         NavigationBarItem(
             selected = currentRoute == Screen.Saved.route,
-            onClick = { onScreenSelected(Screen.Saved) },
-            icon = { Icon(Icons.Default.Favorite, contentDescription = LocalStrings.get("saved", language)) },
+            onClick = { select(Screen.Saved) },
+            icon = { NavIcon(selected = currentRoute == Screen.Saved.route) { Icon(Icons.Default.Bookmark, contentDescription = LocalStrings.get("saved", language)) } },
             label = { Text(LocalStrings.get("saved", language), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Primary,
@@ -376,4 +462,12 @@ fun BottomNav(
             )
         )
     }
+}
+
+
+/** A tab icon that bounces when it becomes the selected one. */
+@Composable
+private fun NavIcon(selected: Boolean, content: @Composable () -> Unit) {
+    val scale by animateFloatAsState(if (selected) 1.15f else 1f, spring(dampingRatio = 0.4f, stiffness = 500f), label = "navIcon")
+    Box(Modifier.graphicsLayer { scaleX = scale; scaleY = scale }) { content() }
 }

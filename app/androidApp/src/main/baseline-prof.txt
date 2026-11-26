@@ -1,0 +1,9 @@
+# Baseline profile: tells Android to pre-compile the code that runs during start-up and the first swipes, instead of interpreting it the first time.
+HSPLandroidx/compose/**;->**(**)**
+HSPLandroidx/lifecycle/**;->**(**)**
+HSPLkotlin/**;->**(**)**
+HSPLkotlinx/coroutines/**;->**(**)**
+HSPLio/ktor/**;->**(**)**
+HSPLcom/example/tattle/**;->**(**)**
+Landroidx/compose/**;
+Lcom/example/tattle/**;

@@ -46,9 +46,9 @@ enum class TourStep(
 
     FULL_ARTICLE(
         6, 7,
-        "Launch Full In-Depth Report 📖",
-        "Tap 'Launch Full Depth Report' at the bottom of the brief to read the full narrative.",
-        "Opened Full In-Depth Report! 📚"
+        "Read Full Article 📖",
+        "Tap 'Read Full Article' at the bottom of the brief to read the full narrative.",
+        "Opened Full Article! 📚"
     ),
 
     TRENDING_SWIPE(

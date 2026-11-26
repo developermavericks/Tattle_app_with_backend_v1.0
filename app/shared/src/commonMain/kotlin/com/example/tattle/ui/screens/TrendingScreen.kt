@@ -53,10 +53,9 @@ fun TrendingScreen(
 
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
 
-    val userAge = preferences.ageGroup.toIntOrNull() ?: calculateAgeFromDob(preferences.dob) ?: 18
 
     LaunchedEffect(Unit) {
-        val remote = articleRepository.getTrendingArticles(userAge)
+        val remote = articleRepository.getTrendingArticles().distinctBy { it.id }
         if (remote.isNotEmpty()) {
             trendingArticles = remote
         }
@@ -114,7 +113,10 @@ fun TrendingScreen(
                         rank = index + 1,
                         article = article,
                         isDark = isDark,
-                        onClick = { selectedIndex = index }
+                        onClick = {
+                            selectedIndex = index
+                            onUpdatePreferences(markSeenTrending(preferences, article.id))
+                        }
                     )
                 }
             }
@@ -137,6 +139,8 @@ fun TrendingScreen(
                         },
                         onShare = { onShareArticle(article) },
                         onLaunchFullText = {
+                            val history = if (!preferences.readHistory.contains(article.id)) preferences.readHistory + article.id else preferences.readHistory
+                            onUpdatePreferences(markSeenTrending(preferences, article.id).copy(readHistory = history))
                             onOpenArticle(article)
                             selectedIndex = null
                         },
@@ -153,6 +157,9 @@ fun TrendingScreen(
         }
     }
 }
+
+private fun markSeenTrending(prefs: UserPreferences, id: String): UserPreferences =
+    if (prefs.seenIds.contains(id)) prefs else prefs.copy(seenIds = (prefs.seenIds + id).takeLast(2000))
 
 @Composable
 fun TrendingListItem(rank: Int, article: Article, isDark: Boolean = false, onClick: () -> Unit) {

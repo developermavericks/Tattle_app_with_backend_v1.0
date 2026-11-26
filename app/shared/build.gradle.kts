@@ -27,7 +27,8 @@ buildkonfig {
         buildConfigField(FieldSpec.Type.STRING, "SUPABASE_KEY", localProperties.getProperty("SUPABASE_KEY") ?: "")
         buildConfigField(FieldSpec.Type.STRING, "BASE_URL", localProperties.getProperty("BASE_URL") ?: "http://10.0.2.2:8081")
         buildConfigField(FieldSpec.Type.STRING, "APP_KEY", localProperties.getProperty("APP_KEY") ?: "")
-        buildConfigField(FieldSpec.Type.STRING, "GUEST_MODE", localProperties.getProperty("GUEST_MODE") ?: "false")
+        // Guest sign-in has been removed from the application; this field is no longer read anywhere.
+        // buildConfigField(FieldSpec.Type.STRING, "GUEST_MODE", localProperties.getProperty("GUEST_MODE") ?: "false")
     }
 }
 
@@ -77,6 +78,8 @@ kotlin {
             implementation(libs.androidx.credentials)
             implementation(libs.androidx.credentials.play.services.auth)
             implementation(libs.googleid)
+            implementation(libs.play.services.auth.api.phone)
+            implementation(libs.play.services.location)
         }
         commonMain.dependencies {
             api(projects.core)

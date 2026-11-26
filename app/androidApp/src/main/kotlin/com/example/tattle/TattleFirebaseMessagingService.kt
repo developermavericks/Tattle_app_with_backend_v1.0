@@ -14,7 +14,7 @@ class TattleFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        println("⚡ TATTLE FCM NEW TOKEN: $token")
+        try { org.koin.core.context.GlobalContext.get().get<com.example.tattle.data.UserSync>().registerPushToken(token) } catch (_: Exception) { }
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -23,7 +23,13 @@ class TattleFirebaseMessagingService : FirebaseMessagingService() {
         val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "⚡ Tattle Breaking News"
         val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: "Tap to read the 30-second Executive Brief."
 
-        showNotification(title, body)
+        // a notification written in the admin console carries its id: it is shown the same way (and with the same id) as one fetched by polling, so a phone that gets both shows one
+        val id = remoteMessage.data["id"]?.toIntOrNull()
+        if (id != null) {
+            com.example.tattle.utils.showLocalNotification(id, title, body, remoteMessage.data["article_id"], remoteMessage.data["sentAt"])
+        } else {
+            showNotification(title, body)
+        }
     }
 
     private fun showNotification(title: String, body: String) {
@@ -53,7 +59,8 @@ class TattleFirebaseMessagingService : FirebaseMessagingService() {
         )
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .setSmallIcon(com.tattle.app.R.drawable.ic_stat_tattle)
+            .setColor(0xFFE14344.toInt())
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)

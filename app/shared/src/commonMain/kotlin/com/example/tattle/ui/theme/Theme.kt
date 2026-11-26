@@ -3,6 +3,8 @@ package com.example.tattle.ui.theme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.em
 
 val Background = Color(0xFFFFFFFF)
 val SurfaceDim = Color(0xFFE8E8E8)
@@ -56,9 +58,14 @@ fun TattleTheme(
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     
+    val inter = interFontFamily()
+
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography(),
-        content = content
-    )
+        typography = Typography().withFamily(inter)
+    ) {
+        // plain Text(...) uses the ambient style, which is not the theme's: set the family there too
+        // relative line height, so big titles that wrap never overlap
+        ProvideTextStyle(TextStyle(fontFamily = inter, lineHeight = 1.3.em)) { content() }
+    }
 }

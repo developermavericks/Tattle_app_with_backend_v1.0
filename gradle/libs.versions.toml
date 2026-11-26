@@ -82,6 +82,9 @@ google-api-client = { module = "com.google.api-client:google-api-client", versio
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
+play-services-auth-api-phone = { module = "com.google.android.gms:play-services-auth-api-phone", version = "18.1.0" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version = "21.3.0" }
+androidx-work-runtime = { module = "androidx.work:work-runtime-ktx", version = "2.9.1" }
 wrappers-browser = { module = "org.jetbrains.kotlin-wrappers:kotlin-browser", version.ref = "kotlin-wrappers" }
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatform-settings" }
 multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatform-settings" }

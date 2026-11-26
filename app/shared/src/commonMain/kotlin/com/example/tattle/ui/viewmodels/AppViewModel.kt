@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.tattle.data.PreferencesRepository
 import com.example.tattle.data.UserSync
 import com.example.tattle.models.UserPreferences
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,8 +17,19 @@ class AppViewModel(
     private val userSync: UserSync
 ) : ViewModel() {
 
+    /** Emitted when the account was deleted on the server (or the login expired): the UI goes back to the login screen. */
+    val sessionEnded = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
     init {
         viewModelScope.launch {
+            userSync.sessionExpired.collect {
+                repository.clearPreferences()          // forget the profile, so the person has to log in and onboard again
+                userSync.ensureSession()
+                sessionEnded.emit(Unit)
+            }
+        }
+        viewModelScope.launch {
+            userSync.validateSession()
             userSync.ensureSession()
             userSync.pullBookmarks()
         }
@@ -44,7 +56,6 @@ class AppViewModel(
         viewModelScope.launch {
             userSync.logout()
             repository.clearPreferences()
-            userSync.ensureSession()          // a fresh guest account for whoever uses the app next
         }
     }
 }

@@ -18,6 +18,7 @@ dependencies {
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)
+    implementation(libs.androidx.work.runtime)
     
     // Credential Manager
     implementation(libs.androidx.credentials)
@@ -51,8 +52,13 @@ android {
         applicationId = "com.tattle.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
+        // Plain HTTP is allowed only while the server address is a LAN / emulator one. With an https:// BASE_URL (the Cloudflare tunnel) it is switched off:
+        // the phone then refuses to talk to the server unencrypted.
+        val serverUrl = rootProject.file("local.properties").takeIf { it.exists() }
+            ?.inputStream()?.use { Properties().apply { load(it) } }?.getProperty("BASE_URL").orEmpty()
+        manifestPlaceholders["usesCleartext"] = if (serverUrl.startsWith("https://")) "false" else "true"
     }
     packaging {
         resources {
@@ -76,7 +82,9 @@ android {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true                  // R8: removes unused code and optimises the rest (faster start, smaller APK)
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
